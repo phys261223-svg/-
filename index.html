@@ -1,0 +1,2756 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>얼불춤 - 불과 얼음의 춤 (무한 모드)</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Noto Sans KR & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #090d16;
+      font-family: 'Noto Sans KR', 'Inter', sans-serif;
+      color: #f8fafc;
+      touch-action: manipulation;
+    }
+
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .glass-panel {
+      background: rgba(12, 17, 32, 0.84);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    }
+
+    .glass-pill {
+      background: rgba(14, 21, 38, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .fire-ice-gradient {
+      background: linear-gradient(90deg, #ff5e3a 0%, #ff9f1c 42%, #38bdf8 72%, #22d3ee 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .btn-interactive {
+      transition: transform 0.13s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn-interactive:hover {
+      transform: translateY(-1px);
+    }
+    .btn-interactive:active {
+      transform: scale(0.96);
+    }
+
+    @keyframes milestonePop {
+      0% { opacity: 0; transform: translate(-50%, -16px) scale(0.9); }
+      15% { opacity: 1; transform: translate(-50%, 0) scale(1.03); }
+      85% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -10px) scale(0.96); }
+    }
+    .milestone-animate {
+      animation: milestonePop 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    /* ================= LOGIN GATE (Firebase) ================= */
+    #authGate {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+      background: radial-gradient(circle at center, rgba(19,27,46,.97) 0%, rgba(6,9,17,.99) 100%);
+    }
+    #authGate[hidden] { display: none; }
+    #authGate input, #authGate button { user-select: text; -webkit-user-select: text; }
+    #authGate .lg-panel {
+      position: relative; width: min(420px, 100%); padding: 34px 30px 26px;
+      background: rgba(15, 23, 42, .92); border: 1px solid rgba(148,163,184,.3); border-radius: 16px;
+      box-shadow: 0 0 0 2px rgba(148,163,184,.12), 0 24px 60px rgba(0,0,0,.85), 0 0 40px rgba(245,158,11,.14);
+    }
+    #authGate .lg-title {
+      margin: 0; font-family: 'Inter','Noto Sans KR',sans-serif; font-weight: 900; font-size: 22px; letter-spacing: .06em;
+      background: linear-gradient(90deg,#fb7185,#fcd34d,#38bdf8); -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    #authGate .lg-sub { margin: 8px 0 22px; font: 700 11px 'Inter',sans-serif; letter-spacing: .3em; color: #94a3b8; }
+    #authGate label { display: block; margin-bottom: 14px; font-size: 13px; font-weight: 700; color: #cbd5e1; }
+    #authGate input[type=text], #authGate input[type=password] {
+      display: block; width: 100%; margin-top: 6px; padding: 11px 13px; font: 600 15px 'Noto Sans KR',sans-serif;
+      color: #f8fafc; background: rgba(2,6,23,.75); border: 1px solid #475569; border-radius: 8px; transition: border-color .2s, box-shadow .2s;
+    }
+    #authGate input:focus { outline: 0; border-color: #fbbf24; box-shadow: 0 0 0 3px rgba(251,191,36,.2); }
+    #authGate .pw { position: relative; display: block; }
+    #authGate .pw input { padding-right: 62px; }
+    #authGate .pw button { position: absolute; right: 6px; top: 50%; margin-top: 3px; transform: translateY(-50%); padding: 6px 8px; font-size: 12px; font-weight: 700; color: #94a3b8; cursor: pointer; background: none; border: 0; }
+    #authGate .chk { display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+    #authGate .chk input { width: 16px; height: 16px; accent-color: #f59e0b; }
+    #lg-status { min-height: 22px; margin: 0 0 10px; font-size: 13px; font-weight: 700; color: #94a3b8; }
+    #lg-status.error { color: #fb7185; } #lg-status.ok { color: #4ade80; }
+    #lg-submit {
+      width: 100%; padding: 12px; border-radius: 10px; font-weight: 900; font-size: 15px; cursor: pointer; color: #fde68a;
+      background: rgba(245,158,11,.22); border: 1px solid rgba(251,191,36,.6); transition: background .2s, transform .1s;
+    }
+    #lg-submit:hover { background: rgba(245,158,11,.34); } #lg-submit:active { transform: scale(.98); } #lg-submit:disabled { opacity: .55; cursor: default; }
+    #authGate .lg-links { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; }
+    #authGate .link { font-size: 13px; font-weight: 700; color: #7dd3fc; padding: 4px 0; background: none; border: 0; cursor: pointer; }
+    #authGate .link:hover { color: #fbbf24; }
+    #authGate .lg-panel.swap form { animation: lgSwap .35s ease; }
+    @keyframes lgSwap { from { opacity: 0; transform: translateX(12px); } }
+    #authGate .lg-panel[data-mode=login] [data-show]:not([data-show~=login]),
+    #authGate .lg-panel[data-mode=signup] [data-show]:not([data-show~=signup]),
+    #authGate .lg-panel[data-mode=reset] [data-show]:not([data-show~=reset]) { display: none; }
+    #modeSelect button.active { border-color: rgba(251,191,36,.7); background: rgba(245,158,11,.16); color: #fde68a; }
+    #modeSelect button:disabled { opacity:.5; }
+    .auto-locked { opacity:.4; cursor:not-allowed !important; }
+    #rankModal[hidden]{display:none}
+  </style>
+</head>
+<body class="relative w-full h-full">
+
+  <!-- 빌드 표시 (최신 파일인지 확인용) + 초기 오류 표시 -->
+  <div id="buildTag" style="position:fixed;right:8px;bottom:6px;z-index:10000;font:600 10px sans-serif;color:#64748b;pointer-events:none">v3 · 로그인/랭킹 (div 수정판)</div>
+  <script>
+    window.addEventListener("error", function (e) {
+      var b = document.getElementById("buildTag");
+      if (b && !b.dataset.err) { b.dataset.err = "1"; b.style.color = "#fca5a5"; b.textContent += " · 오류: " + (e.message || "알 수 없음"); }
+    });
+  </script>
+
+  <div id="authGate" aria-label="로그인">
+    <main class="lg-panel" id="lg-panel" data-mode="login">
+      <h2 class="lg-title">얼불춤</h2>
+      <p class="lg-sub" id="lg-sub">PLAYER ACCESS</p>
+      <form id="lg-form" novalidate>
+        <label>아이디 또는 이메일
+          <input id="lg-id" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="아이디(2~12자) 또는 이메일">
+        </label>
+        <label data-show="login signup">비밀번호
+          <span class="pw">
+            <input id="lg-pw" type="password" autocomplete="current-password" placeholder="6자 이상">
+            <button type="button" id="lg-eye" aria-pressed="false">보기</button>
+          </span>
+        </label>
+        <label data-show="signup">비밀번호 확인
+          <input id="lg-pw2" type="password" autocomplete="new-password" placeholder="비밀번호 다시 입력">
+        </label>
+        <label class="chk" data-show="login signup"><input id="lg-remember" type="checkbox"> 이 기기에서 로그인 유지</label>
+        <p id="lg-status" role="status" aria-live="polite"></p>
+        <button id="lg-submit" type="submit">로그인</button>
+      </form>
+      <div class="lg-links">
+        <button type="button" class="link" data-show="login" data-go="signup">회원가입</button>
+        <button type="button" class="link" data-show="login" data-go="reset">비밀번호 찾기</button>
+        <button type="button" class="link" data-show="signup reset" data-go="login">← 로그인으로 돌아가기</button>
+      </div>
+      <button type="button" class="link" id="lg-guest" style="margin-top:12px;width:100%;text-align:center;color:#94a3b8">로그인 없이 무한 모드만 해보기 (랭킹전 불가)</button>
+    </main>
+  </div>
+
+  <!-- 메인 게임 캔버스 -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- 상단 HUD 영역 -->
+  <header class="fixed top-0 left-0 right-0 z-20 pointer-events-none p-3 sm:p-4">
+    <div class="max-w-7xl w-full mx-auto flex flex-wrap items-center justify-between gap-2">
+
+      <!-- 좌측: 브랜드 타이틀 & 현재 난이도 단계 배지 -->
+      <div class="flex items-center gap-2 pointer-events-auto flex-wrap">
+        <div class="glass-pill px-3.5 py-2 rounded-2xl flex items-center gap-2.5">
+          <div class="flex items-center">
+            <span class="w-3 h-3 rounded-full bg-[#ff5e3a] shadow-[0_0_10px_#ff5e3a]"></span>
+            <span class="w-3 h-3 rounded-full bg-[#38bdf8] shadow-[0_0_10px_#38bdf8] -ml-1"></span>
+          </div>
+          <span class="font-black text-base sm:text-lg tracking-tight fire-ice-gradient">얼불춤</span>
+          <span id="modeBadge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-slate-200 border border-white/10">무한 모드</span>
+        </div>
+
+        <!-- 동적 난이도 배지 (Lv.1 ~ Lv.5) -->
+        <div id="tierBadge" class="glass-pill px-3.5 py-2 rounded-2xl flex items-center gap-2 text-xs sm:text-sm font-bold text-emerald-300 border-emerald-400/30">
+          <span id="tierDot" class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
+          <span id="tierLabel">Lv.1 입문 · 여유로운 리듬</span>
+        </div>
+      </div>
+
+      <!-- 우측: 실시간 지표(진행 타일, 최고 기록, BPM, 정확도) & 조작 버튼 -->
+      <div class="flex items-center gap-2 pointer-events-auto ml-auto sm:ml-0 flex-wrap justify-end">
+        <div class="glass-pill px-3.5 py-1.5 rounded-2xl flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
+            <span class="text-slate-400 text-[11px] sm:text-xs font-medium">진행 타일</span>
+            <span id="hudDistance" class="font-black text-white text-sm sm:text-base tabular-nums">0</span>
+          </div>
+          <div class="w-px h-4 bg-slate-700/80"></div>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
+            <span class="text-slate-400 text-[11px] sm:text-xs font-medium">최고 기록</span>
+            <span id="hudBest" class="font-black text-amber-300 text-sm sm:text-base tabular-nums">0</span>
+          </div>
+          <div class="w-px h-4 bg-slate-700/80"></div>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:gap-1.5">
+            <span class="text-slate-400 text-[11px] sm:text-xs font-medium">BPM</span>
+            <span id="hudBpm" class="font-black text-orange-400 text-sm sm:text-base tabular-nums">90</span>
+          </div>
+          <div class="hidden md:flex items-center gap-1.5 border-l border-slate-700/80 pl-3.5">
+            <span class="text-slate-400 text-xs font-medium">정확도</span>
+            <span id="hudAccuracy" class="font-bold text-cyan-300 tabular-nums">100.0%</span>
+          </div>
+        </div>
+
+        <!-- 로그인 사용자 / 랭킹 / 로그아웃 -->
+        <span id="userChip" class="hidden items-center gap-1.5 px-2.5 py-1.5 rounded-2xl text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-400/40">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span><span id="userName" class="max-w-[90px] truncate"></span>
+        </span>
+        <button id="btnRanking" type="button" class="glass-pill btn-interactive px-3 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1.5 text-amber-300 hover:text-amber-200" title="랭킹 보기">🏆 <span class="hidden sm:inline">랭킹</span></button>
+        <button id="btnLoginOpen" type="button" class="glass-pill btn-interactive px-3 py-2 rounded-2xl text-xs sm:text-sm font-bold text-sky-300 hover:text-white">로그인</button>
+        <button id="btnLogout" type="button" class="hidden glass-pill btn-interactive px-3 py-2 rounded-2xl text-xs sm:text-sm font-bold text-slate-300 hover:text-white">로그아웃</button>
+
+        <!-- 자동 연주 (AUTO) 토글 -->
+        <button id="btnAutoPlay" type="button" class="glass-pill btn-interactive px-3 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1.5 text-slate-300 hover:text-white" title="자동 연주 (최고 기록 저장 비활성화)">
+          <span id="autoDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+          <span>자동 연주</span>
+        </button>
+
+        <!-- 소리 켜기/끄기 버튼 -->
+        <button id="btnMute" type="button" class="glass-pill btn-interactive px-3 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1.5 text-slate-200 hover:text-white" title="소리 켜기/끄기">
+          <svg id="iconAudioOn" class="w-4 h-4 text-cyan-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14" />
+          </svg>
+          <svg id="iconAudioOff" class="w-4 h-4 hidden text-rose-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6" />
+          </svg>
+          <span id="muteText" class="hidden sm:inline">소리 켜짐</span>
+        </button>
+
+        <!-- 다시 시작 (R) 버튼 -->
+        <button id="btnRestart" type="button" class="glass-pill btn-interactive px-3 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1.5 text-slate-200 hover:text-white" title="다시 시작 (R)">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span class="hidden sm:inline">다시 시작</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 난이도 상승 마일스톤 배너 -->
+  <div id="milestoneContainer" class="fixed top-20 left-1/2 z-20 pointer-events-none"></div>
+
+  <!-- 시작 / 게임 오버 모달 오버레이 -->
+  <div id="modalOverlay" class="fixed inset-0 z-30 flex items-center justify-center p-4 bg-[#060911]/70 backdrop-blur-sm">
+    <div class="glass-panel max-w-md w-full rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden">
+      <!-- 배경 네온 글로우 -->
+      <div class="absolute -top-24 -left-24 w-48 h-48 rounded-full bg-[#ff5e3a]/20 blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -right-24 w-48 h-48 rounded-full bg-[#38bdf8]/20 blur-3xl pointer-events-none"></div>
+
+      <!-- 상단 배지 -->
+      <div id="modalBadge" class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold bg-white/10 text-amber-300 border border-white/15 mb-3">
+        ENDLESS RHYTHM CHALLENGE
+      </div>
+
+      <!-- 타이틀 -->
+      <h1 id="modalTitle" class="text-2xl sm:text-3xl font-black tracking-tight text-white mb-2">
+        불과 얼음의 무한 질주
+      </h1>
+
+      <!-- 안내 문구 / 실패 사유 -->
+      <p id="modalDesc" class="text-sm sm:text-base text-slate-300 leading-relaxed mb-5">
+        <span class="text-[#ff7a59] font-bold">불</span>과 <span class="text-[#38bdf8] font-bold">얼음</span> 두 행성이 서로를 축으로 공전합니다.<br/>
+        <span class="text-amber-300 font-semibold">4박자 카운트다운(1, 2, 3, 4)</span> 후 행성이 다음 타일에 겹칠 때 키를 누르세요!
+      </p>
+
+      <!-- 시작 화면: 특수 타일 및 단계 안내 -->
+      <div id="startGuide" class="space-y-3 mb-6 text-left">
+        <div id="modeSelect" class="grid grid-cols-2 gap-2 text-center text-xs">
+          <button id="modeEndless" type="button" class="btn-interactive rounded-2xl p-2.5 border border-slate-700/70 bg-slate-900/80 text-slate-200">
+            <div class="font-black text-sm">♾️ 무한 모드</div><div class="text-[11px] text-slate-400 mt-0.5">연습 · 자동 연주 가능</div>
+          </button>
+          <button id="modeRanked" type="button" class="btn-interactive rounded-2xl p-2.5 border border-slate-700/70 bg-slate-900/80 text-slate-200">
+            <div class="font-black text-sm">🏆 랭킹전</div><div class="text-[11px] text-slate-400 mt-0.5">로그인 · 자동 연주 불가</div>
+          </button>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-center text-xs">
+          <div class="bg-slate-900/80 border border-purple-500/30 rounded-2xl p-2.5">
+            <div class="text-base mb-0.5">🌀</div>
+            <div class="font-bold text-purple-300">역회전</div>
+            <div class="text-slate-400 text-[11px]">공전 방향 반전</div>
+          </div>
+          <div class="bg-slate-900/80 border border-orange-500/30 rounded-2xl p-2.5">
+            <div class="text-base mb-0.5">🐇</div>
+            <div class="font-bold text-orange-300">가속</div>
+            <div class="text-slate-400 text-[11px]">템포 1.18배 상승</div>
+          </div>
+          <div class="bg-slate-900/80 border border-sky-500/30 rounded-2xl p-2.5">
+            <div class="text-base mb-0.5">🐌</div>
+            <div class="font-bold text-sky-300">감속</div>
+            <div class="text-slate-400 text-[11px]">템포 0.82배 감속</div>
+          </div>
+        </div>
+        <div class="bg-slate-900/75 border border-slate-700/60 rounded-2xl px-3.5 py-2.5 text-xs text-slate-300 flex items-center justify-between">
+          <span>여유로운 <strong class="text-emerald-300">90 BPM</strong> 시작 → 끝없는 가속!</span>
+          <span class="text-amber-300 font-bold">Lv.1 → Lv.5+</span>
+        </div>
+      </div>
+
+      <!-- 게임 오버 화면: 최종 결과 통계 -->
+      <div id="resultStats" class="hidden bg-slate-900/85 border border-slate-700/70 rounded-2xl p-4 mb-6 text-left">
+        <div id="newRecordBanner" class="hidden mb-3 py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/40 text-center text-xs font-black text-amber-300">
+          🏆 최고 기록 경신!
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-3 pb-3 border-b border-slate-800">
+          <div>
+            <div class="text-xs text-slate-400">진행 타일</div>
+            <div id="statDistance" class="text-2xl font-black text-white tabular-nums">0</div>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400">최고 기록</div>
+            <div id="statBest" class="text-2xl font-black text-amber-300 tabular-nums">0</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-center text-xs mb-3">
+          <div class="bg-slate-800/70 rounded-xl p-2">
+            <div class="text-slate-400 text-[11px]">도달 단계</div>
+            <div id="statTier" class="font-black text-emerald-300 mt-0.5">Lv.1</div>
+          </div>
+          <div class="bg-slate-800/70 rounded-xl p-2">
+            <div class="text-slate-400 text-[11px]">최고 BPM</div>
+            <div id="statMaxBpm" class="font-black text-orange-300 mt-0.5 tabular-nums">90</div>
+          </div>
+          <div class="bg-slate-800/70 rounded-xl p-2">
+            <div class="text-slate-400 text-[11px]">최종 정확도</div>
+            <div id="statAccuracy" class="font-black text-cyan-300 mt-0.5 tabular-nums">100.0%</div>
+          </div>
+        </div>
+
+        <div id="rankSaveStatus" class="hidden mb-3 py-1.5 px-3 rounded-xl bg-slate-800/70 text-center text-xs font-bold text-slate-300"></div>
+        <div class="grid grid-cols-2 gap-2 text-center text-xs">
+          <div class="bg-emerald-500/10 border border-emerald-500/25 rounded-xl py-1.5">
+            <span class="text-emerald-300 font-bold">완벽 / 정확 </span>
+            <span id="statPerfect" class="font-black text-white ml-1">0</span>
+          </div>
+          <div class="bg-amber-500/10 border border-amber-500/25 rounded-xl py-1.5">
+            <span class="text-amber-300 font-bold">빠름 / 느림 </span>
+            <span id="statGood" class="font-black text-white ml-1">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 시작 / 재도전 버튼 -->
+      <button id="btnStartRetry" type="button" class="btn-interactive w-full py-3.5 px-6 rounded-2xl font-black text-base text-white bg-gradient-to-r from-[#ff5e3a] via-amber-500 to-[#38bdf8] shadow-lg shadow-orange-500/20">
+        무한 모드 시작 (Space)
+      </button>
+      <div class="grid grid-cols-2 gap-2 mt-2.5">
+        <button id="btnToMenu" type="button" class="hidden btn-interactive py-2.5 rounded-2xl text-sm font-bold text-slate-200 bg-slate-800/80 border border-slate-600/60">모드 선택</button>
+        <button id="btnModalRanking" type="button" class="btn-interactive py-2.5 rounded-2xl text-sm font-bold text-amber-300 bg-slate-800/80 border border-amber-400/30 col-span-2" >🏆 랭킹 보기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 랭킹 모달 -->
+  <div id="rankModal" hidden class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-[#060911]/80 backdrop-blur-sm">
+    <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 relative">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-black text-white">🏆 랭킹전 TOP 30</h2>
+        <button id="rankClose" type="button" class="btn-interactive px-3 py-1.5 rounded-xl text-sm font-bold text-slate-300 bg-slate-800/80 border border-slate-600/60">닫기</button>
+      </div>
+      <div id="rankMe" class="hidden mb-3 py-1.5 px-3 rounded-xl bg-emerald-500/10 border border-emerald-400/30 text-xs font-bold text-emerald-300"></div>
+      <div id="rankList" class="max-h-[55vh] overflow-y-auto space-y-1.5 pr-1 text-sm"></div>
+      <p class="mt-3 text-[11px] text-slate-500">점수 = 통과한 타일 수 · 자동 연주 기록은 등록되지 않아요.</p>
+    </div>
+  </div>
+
+  <!-- 하단 조작 가이드 바 -->
+  <footer class="fixed bottom-3 left-0 right-0 z-10 pointer-events-none px-4 flex justify-center">
+    <div class="glass-pill px-4 py-1.5 rounded-full text-xs text-slate-300 flex items-center gap-2 shadow-lg">
+      <span class="w-2 h-2 rounded-full bg-[#ff5e3a]"></span>
+      <span><strong class="text-white">스페이스바 / 아무 키 / 화면 터치</strong>로 박자에 맞춰 이동</span>
+      <span class="hidden sm:inline text-slate-500">|</span>
+      <span class="hidden sm:inline text-slate-400"><strong class="text-slate-200">R</strong> 즉시 재시작</span>
+    </div>
+  </footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+/* gstatic이 막혀 있으면 jsdelivr에서 같은 버전을 대신 불러온다 */
+(function(){
+  function w(n){document.write('<scr'+'ipt src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-'+n+'-compat.js"></scr'+'ipt>');}
+  if(typeof firebase==='undefined'){w('app');w('auth');}
+  else if(!firebase.auth){w('auth');}
+  if(typeof firebase!=='undefined' && !firebase.database){w('database');}
+
+
+
+})();
+</script>
+<script>
+/* 기존 EGG RAID(index.html)와 동일한 Firebase 프로젝트 설정 - 값 변경 없음 */
+window.OD_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyB-Hl1_NgCu9CRetCV6riv0hAu7hlOHfBw",
+  authDomain: "project-5885092822785266456.firebaseapp.com",
+  databaseURL: "https://project-5885092822785266456-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "project-5885092822785266456",
+  storageBucket: "project-5885092822785266456.firebasestorage.app",
+  messagingSenderId: "944337055726",
+  appId: "1:944337055726:web:bc20c1cd53e2dedecde8ff"
+};
+
+</script>
+<script>
+/* Firebase Authentication 래퍼 - EGG RAID와 같은 계정 규칙(아이디 → 내부 이메일) 사용 */
+(function () {
+  'use strict';
+  var OD = window.OD = window.OD || {};
+  var KEY = 'gw_site_login_remember'; // EGG RAID와 동일한 키 (아이디만 저장, 비밀번호는 저장 안 함)
+  var ready = false, busy = false, cb = null;
+  var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/, INTERNAL = /@gw\.local$/;
+  var BAD = '아이디 또는 비밀번호가 올바르지 않아요.';
+
+  var initError = '';
+  try {
+    if (typeof firebase === 'undefined' || !firebase.auth) throw new Error('Firebase 라이브러리를 불러오지 못했어요. 인터넷 연결(또는 광고/보안 차단 프로그램)을 확인해 주세요.');
+    if (!firebase.apps.length) firebase.initializeApp(window.OD_FIREBASE_CONFIG);
+    firebase.auth(); // 여기서 환경 문제가 있으면 바로 잡아낸다
+    ready = true;
+  } catch (e) { initError = (e && e.message) || String(e); console.error('[OVERDRIVE] Firebase 초기화 실패', e); }
+
+  // 아이디는 EGG RAID와 같은 규칙으로 내부 이메일로 변환, '@'가 있으면 실제 이메일로 취급
+  function toEmail(raw) {
+    var v = (raw || '').trim();
+    if (v.indexOf('@') > -1) return EMAIL.test(v) ? v.toLowerCase() : null;
+    if (!v) return null;
+    return encodeURIComponent(v.toLowerCase()).replace(/%/g, '_') + '@gw.local';
+  }
+  function errMsg(e, ctx) {
+    var c0 = e && e.code;
+    if (c0 && c0.indexOf('auth/requests-from-referer') === 0) return '이 주소에서는 Firebase 접속이 막혀 있어요. 게임을 올려둔 사이트 주소에서 열거나, Firebase 콘솔의 API 키 허용 주소에 이 주소를 추가해 주세요.';
+    var m = {
+      'auth/unauthorized-domain': '이 주소는 Firebase 승인된 도메인에 없어요. Firebase 콘솔 → Authentication → 설정 → 승인된 도메인에 추가해 주세요.',
+      'auth/operation-not-allowed': 'Firebase에서 이메일/비밀번호 로그인이 꺼져 있어요.',
+      'auth/api-key-not-valid': 'Firebase API 키가 올바르지 않아요.',
+      'auth/internal-error': 'Firebase 내부 오류예요. 잠시 후 다시 시도해 주세요.',
+      'auth/email-already-in-use': '이미 사용 중인 아이디(이메일)예요.',
+      'auth/invalid-email': '아이디 또는 이메일 형식이 올바르지 않아요.',
+      'auth/weak-password': '비밀번호는 6자 이상이어야 해요.',
+      'auth/user-not-found': ctx === 'reset' ? '가입된 이메일을 찾을 수 없어요.' : BAD,
+      'auth/wrong-password': BAD, 'auth/invalid-credential': BAD,
+      'auth/user-disabled': '사용이 중지된 계정이에요.',
+      'auth/too-many-requests': '시도가 너무 많아요. 잠시 후 다시 해 주세요.',
+      'auth/network-request-failed': '네트워크 연결을 확인해 주세요.',
+      'auth/operation-not-supported-in-this-environment': '이 실행 환경에서는 로그인을 쓸 수 없어요. http://localhost 같은 로컬 서버로 열어 주세요.',
+      'od/no-email': '아이디로 만든 계정은 이메일이 없어 재설정 메일을 보낼 수 없어요. 이메일로 가입한 계정만 가능해요.'
+    };
+    return (e && m[e.code]) || ('오류가 발생했어요' + (e && e.code ? ' (' + e.code + ')' : '') + (e && e.message ? ': ' + e.message : ''));
+  }
+  function persist(remember) {
+    if (!/^https?:$/.test(location.protocol)) return Promise.resolve(); // file:// 에서는 저장 방식 지정을 건너뜀
+    var P = firebase.auth.Auth.Persistence;
+    return firebase.auth().setPersistence(remember ? P.LOCAL : P.SESSION).catch(function () {});
+  }
+  function remember(raw, on) { try { on ? localStorage.setItem(KEY, JSON.stringify({ id: raw.trim() })) : localStorage.removeItem(KEY); } catch (e) {} }
+  function remembered() { try { var p = JSON.parse(localStorage.getItem(KEY)); return p && p.id || ''; } catch (e) { return ''; } }
+  function label(u) {
+    if (u.displayName) return u.displayName;
+    var l = (u.email || '').split('@')[0];
+    try { return INTERNAL.test(u.email || '') ? decodeURIComponent(l.replace(/_/g, '%')) : l; } catch (e) { return l; }
+  }
+
+  OD.auth = {
+    ready: ready, initError: initError, errMsg: errMsg, label: label, remembered: remembered,
+    isEmailAccount: function (u) { return !!u.email && !INTERNAL.test(u.email); },
+    signIn: function (raw, pw, rem) {
+      var email = toEmail(raw);
+      if (!email) return Promise.reject({ code: 'auth/invalid-email' });
+      return persist(rem).then(function () { return firebase.auth().signInWithEmailAndPassword(email, pw); })
+        .then(function () { remember(raw, rem); });
+    },
+    signUp: function (raw, pw, rem) {
+      var email = toEmail(raw);
+      if (!email) return Promise.reject({ code: 'auth/invalid-email' });
+      busy = true; // 표시 이름 저장이 끝날 때까지 화면 전환 보류
+      return persist(rem).then(function () { return firebase.auth().createUserWithEmailAndPassword(email, pw); })
+        .then(function (c) {
+          var name = INTERNAL.test(email) ? raw.trim() : email.split('@')[0];
+          return c.user.updateProfile({ displayName: name }).catch(function () {});
+        })
+        .then(function () { remember(raw, rem); busy = false; if (cb) cb(firebase.auth().currentUser); })
+        .catch(function (e) { busy = false; throw e; });
+    },
+    reset: function (raw) {
+      var email = toEmail(raw);
+      if (!email) return Promise.reject({ code: 'auth/invalid-email' });
+      if (INTERNAL.test(email)) return Promise.reject({ code: 'od/no-email' });
+      return firebase.auth().sendPasswordResetEmail(email);
+    },
+    signOut: function () { return firebase.auth().signOut(); },
+    current: function () { return ready ? firebase.auth().currentUser : null; },
+    onState: function (fn) {
+      cb = fn;
+      if (ready) firebase.auth().onAuthStateChanged(function (u) { if (!busy) cb(u); });
+    }
+  };
+})();
+
+</script>
+<script>
+/* 로그인 화면 동작: 로그인 / 회원가입 / 비밀번호 찾기 */
+(function () {
+  'use strict';
+  var OD = window.OD, A = OD.auth, $ = function (i) { return document.getElementById(i); };
+  var panel = $('lg-panel'), fid = $('lg-id'), pw = $('lg-pw'), pw2 = $('lg-pw2'), rem = $('lg-remember');
+  var st = $('lg-status'), btn = $('lg-submit'), sub = $('lg-sub');
+  var mode = 'login', busy = false;
+  var TXT = { login: ['PLAYER ACCESS', '로그인'], signup: ['NEW PLAYER REGISTRATION', '회원가입'], reset: ['PASSWORD RECOVERY', '재설정 메일 보내기'] };
+
+  function say(m, t) { st.textContent = m || ''; st.className = t || ''; }
+  function lock(b) { busy = b; btn.disabled = b; }
+  function setMode(m) {
+    mode = m; panel.dataset.mode = m; sub.textContent = TXT[m][0]; btn.textContent = TXT[m][1];
+    pw.value = pw2.value = ''; say('');
+    pw.autocomplete = m === 'login' ? 'current-password' : 'new-password';
+    panel.classList.remove('swap'); void panel.offsetWidth; panel.classList.add('swap');
+  }
+  function validate() {
+    var v = fid.value.trim();
+    if (!v) return '아이디 또는 이메일을 입력해 주세요.';
+    if (mode === 'reset') return '';
+    if (!pw.value) return '비밀번호를 입력해 주세요.';
+    if (mode === 'signup') {
+      if (v.indexOf('@') < 0 && (v.length < 2 || v.length > 12)) return '아이디는 2~12자로 입력해 주세요.';
+      if (pw.value.length < 6) return '비밀번호는 6자 이상이어야 해요.';
+      if (pw.value !== pw2.value) return '비밀번호 확인이 일치하지 않아요.';
+    }
+    return '';
+  }
+  $('lg-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (busy) return;
+    if (!A.ready) { say('로그인 서버에 연결할 수 없어요. ' + (A.initError || ''), 'error'); return; }
+    var bad = validate(); if (bad) { say(bad, 'error'); return; }
+    var v = fid.value.trim(), p;
+    lock(true);
+    if (mode === 'login') { say('인증 중...'); p = A.signIn(v, pw.value, rem.checked); }
+    else if (mode === 'signup') { say('계정 생성 중...'); p = A.signUp(v, pw.value, rem.checked); }
+    else {
+      say('메일 전송 중...');
+      p = A.reset(v).then(function () { say('재설정 메일을 보냈어요. 메일함(스팸함 포함)을 확인해 주세요.', 'ok'); lock(false); });
+    }
+    // 로그인/가입 성공 시에는 인증 상태 변화가 메인 화면 전환을 처리한다
+    p.catch(function (err) { say(A.errMsg(err, mode), 'error'); lock(false); });
+  });
+  Array.prototype.forEach.call(panel.querySelectorAll('[data-go]'), function (b) {
+    b.addEventListener('click', function () { setMode(b.dataset.go); });
+  });
+  $('lg-eye').addEventListener('click', function () {
+    var show = pw.type === 'password';
+    pw.type = show ? 'text' : 'password'; this.textContent = show ? '숨기기' : '보기'; this.setAttribute('aria-pressed', show);
+  });
+  var saved = A.remembered(); if (saved) { fid.value = saved; rem.checked = true; }
+  if (!A.ready) say('Firebase 연결 실패: ' + A.initError, 'error');
+
+  OD.login = { release: function () { lock(false); setMode('login'); } }; // 로그아웃 후 로그인 화면 초기화
+})();
+
+</script>
+<script>
+/* 로그인 게이트: 로그인 성공 시 닫힘, '로그인 없이' 선택 시 게스트(무한 모드만) */
+(function () {
+  'use strict';
+  var OD = window.OD, A = OD.auth, $ = function (i) { return document.getElementById(i); };
+  var gate = $('authGate');
+  OD.user = null; OD.guest = false;
+  // 로그인 입력 중 키 입력이 게임 단축키로 새지 않도록 차단
+  ['keydown', 'keyup', 'keypress'].forEach(function (t) { gate.addEventListener(t, function (e) { e.stopPropagation(); }); });
+  function emit() { window.dispatchEvent(new CustomEvent('od-auth', { detail: OD.user })); }
+  OD.showGate = function (msg) {
+    OD.guest = false; gate.hidden = false;
+    if (OD.login) OD.login.release();
+    if (msg) { var s = $('lg-status'); s.textContent = msg; s.className = 'error'; }
+  };
+  $('lg-guest').addEventListener('click', function () { OD.guest = true; gate.hidden = true; emit(); });
+  $('btnLoginOpen').addEventListener('click', function () { OD.showGate(); });
+  $('btnLogout').addEventListener('click', function () { if (A.ready) A.signOut(); });
+  if (A && A.ready) {
+    A.onState(function (u) {
+      OD.user = u || null;
+      if (u) { gate.hidden = true; }
+      else if (!OD.guest) { gate.hidden = false; if (OD.login) OD.login.release(); }
+      emit();
+    });
+  }
+})();
+</script>
+
+  <script>
+    /**
+     * ============================================================================
+     * 얼불춤 (A Dance of Fire and Ice) - 무한 모드 (Endless Mode)
+     *
+     * [설계 핵심]
+     * 1. 단조 증가 공전각(`travelAngle`):
+     *    각 타일마다 진입각 `inAngle`에서 진출각 `outAngle`까지 `orbitDir`(+1/-1)로
+     *    회전해야 하는 정확한 양의 목표 회전각 `targetTravel` ∈ (0, 2π] 을 계산하여
+     *    ±π 경계 래핑 오류나 역회전 점프 버그를 완전히 차단합니다.
+     * 2. 진정한 무한 트랙 생성기 (백트래킹 & 우상향 바이어스):
+     *    앞쪽에 항상 최소 35개 타일을 유지하며, 경로가 막히는 경우 최근 2~3개 타일을
+     *    되돌려(Backtrack) 다른 각도로 재탐색하므로 1,000타일 이상도 끊기지 않습니다.
+     * 3. 초보자 친화적 난이도 곡선:
+     *    - 0~15타일 (Lv.1): 90 BPM, 직선 위주 + ±52° 넉넉한 초반 판정 허용치
+     *    - 16~30타일 (Lv.2): 95~108 BPM, 깔끔한 90°/270° 기본 코너
+     *    - 31~55타일 (Lv.3): 110~132 BPM, 역회전(🌀) 및 계단 패턴 도입
+     *    - 56~85타일 (Lv.4): 135~165 BPM, 가속(🐇) 및 감속(🐌) 변속 기믹 도입
+     *    - 86타일+ (Lv.5): 170 → 260+ BPM 무한 가속 및 복합 패턴
+     * ============================================================================
+     */
+
+    // --------------------------------------------------------------------------
+    // 1. 상수 및 5단계 난이도(Tier) 정의
+    // --------------------------------------------------------------------------
+    const TILE_STEP = 76;          // 타일 중심 간 공전 반지름 (px)
+    const PLANET_RADIUS = 14.5;    // 불/얼음 행성 반지름 (px)
+    const MIN_AHEAD_TILES = 36;    // 플레이어 앞쪽에 항상 유지할 최소 타일 버퍼 수
+    const MIN_REACTION_SEC = 0.18; // 연속 입력 간 최소 보장 시간 (초)
+    const STORAGE_KEY_BEST = "adofai_endless_best_v2";
+
+    const DIFFICULTY_TIERS = [
+      {
+        level: 1,
+        minTiles: 0,
+        name: "Lv.1 입문 · 여유로운 리듬",
+        badgeClass: "text-emerald-300 border-emerald-400/30",
+        dotClass: "bg-emerald-400 shadow-[0_0_8px_#34d399]",
+        bgTint: "#0b1422"
+      },
+      {
+        level: 2,
+        minTiles: 16,
+        name: "Lv.2 기본 코너",
+        badgeClass: "text-cyan-300 border-cyan-400/30",
+        dotClass: "bg-cyan-400 shadow-[0_0_8px_#22d3ee]",
+        bgTint: "#0b1628"
+      },
+      {
+        level: 3,
+        minTiles: 31,
+        name: "Lv.3 엇박과 소용돌이",
+        badgeClass: "text-purple-300 border-purple-400/35",
+        dotClass: "bg-purple-400 shadow-[0_0_8px_#c084fc]",
+        bgTint: "#130d26"
+      },
+      {
+        level: 4,
+        minTiles: 56,
+        name: "Lv.4 변속의 리듬",
+        badgeClass: "text-amber-300 border-amber-400/35",
+        dotClass: "bg-amber-400 shadow-[0_0_8px_#fbbf24]",
+        bgTint: "#191119"
+      },
+      {
+        level: 5,
+        minTiles: 86,
+        name: "Lv.5 무한의 한계돌파",
+        badgeClass: "text-orange-300 border-orange-400/45",
+        dotClass: "bg-orange-400 shadow-[0_0_10px_#fb923c]",
+        bgTint: "#1d0a10"
+      }
+    ];
+
+    function getTierForTiles(tilesCount) {
+      let current = DIFFICULTY_TIERS[0];
+      for (const tier of DIFFICULTY_TIERS) {
+        if (tilesCount >= tier.minTiles) {
+          current = tier;
+        }
+      }
+      return current;
+    }
+
+    /**
+     * 진행 타일 수에 따른 기본 BPM 계산:
+     * - 0~15타일: 90 BPM 고정 (초보자 적응 구간)
+     * - 16~30타일: 95 -> 108 BPM
+     * - 31~55타일: 110 -> 132 BPM
+     * - 56~85타일: 135 -> 165 BPM
+     * - 86타일+: 170 -> 265 BPM 점진 상승
+     */
+    function computeBaseBpmForTiles(tilesCount) {
+      if (tilesCount <= 15) {
+        return 90;
+      }
+      if (tilesCount <= 30) {
+        const t = (tilesCount - 16) / 14;
+        return Math.round(95 + t * 13);
+      }
+      if (tilesCount <= 55) {
+        const t = (tilesCount - 31) / 24;
+        return Math.round(110 + t * 22);
+      }
+      if (tilesCount <= 85) {
+        const t = (tilesCount - 56) / 29;
+        return Math.round(135 + t * 30);
+      }
+      const extra = tilesCount - 86;
+      return Math.min(265, Math.round(170 + extra * 0.72));
+    }
+
+    // --------------------------------------------------------------------------
+    // 2. Web Audio API 프로시저럴 신디사이저 & 비트 엔진
+    // --------------------------------------------------------------------------
+    class RhythmAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.master = null;
+        this.muted = false;
+        this.scaleIndex = 0;
+      }
+
+      unlock() {
+        if (!this.ctx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContextClass();
+          this.master = this.ctx.createGain();
+          this.master.gain.value = this.muted ? 0 : 0.42;
+          this.master.connect(this.ctx.destination);
+        }
+        if (this.ctx.state === "suspended") {
+          this.ctx.resume();
+        }
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        if (this.master && this.ctx) {
+          this.master.gain.setTargetAtTime(this.muted ? 0 : 0.42, this.ctx.currentTime, 0.02);
+        }
+        return this.muted;
+      }
+
+      // 4박자 카운트다운 메트로놈 클릭음
+      playCountdownBeat(beatNumber) {
+        if (this.muted) return;
+        this.unlock();
+        const now = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        const freq = beatNumber === 4 ? 880 : 587.33;
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, now);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.65, now + 0.09);
+
+        gain.gain.setValueAtTime(0.45, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+
+        osc.connect(gain);
+        gain.connect(this.master);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      }
+
+      // 타일 착지 멜로디 차임 + BPM 동기화 킥/하이햇 펄스 + 특수 타일 효과음
+      playTileHit(judgment, tileType, stepNumber) {
+        if (this.muted) return;
+        this.unlock();
+        const now = this.ctx.currentTime;
+
+        // 1) 펜타토닉 멜로디 노트
+        const melodyScale = [
+          261.63, 311.13, 349.23, 392.00, 466.16,
+          523.25, 622.25, 698.46, 783.99, 932.33, 1046.50
+        ];
+        const noteFreq = melodyScale[this.scaleIndex % melodyScale.length];
+        this.scaleIndex++;
+
+        const leadOsc = this.ctx.createOscillator();
+        const leadGain = this.ctx.createGain();
+        leadOsc.type = (judgment === "perfect" || judgment === "exact") ? "triangle" : "sine";
+        leadOsc.frequency.setValueAtTime(noteFreq, now);
+
+        const vol = (judgment === "perfect" || judgment === "exact") ? 0.28 : 0.19;
+        leadGain.gain.setValueAtTime(vol, now);
+        leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+
+        leadOsc.connect(leadGain);
+        leadGain.connect(this.master);
+        leadOsc.start(now);
+        leadOsc.stop(now + 0.28);
+
+        // 2) 리듬 비트 레이어
+        if (stepNumber % 2 === 0) {
+          const kick = this.ctx.createOscillator();
+          const kickG = this.ctx.createGain();
+          kick.type = "sine";
+          kick.frequency.setValueAtTime(140, now);
+          kick.frequency.exponentialRampToValueAtTime(42, now + 0.12);
+          kickG.gain.setValueAtTime(0.42, now);
+          kickG.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+          kick.connect(kickG);
+          kickG.connect(this.master);
+          kick.start(now);
+          kick.stop(now + 0.15);
+        } else {
+          const hat = this.ctx.createOscillator();
+          const hatG = this.ctx.createGain();
+          hat.type = "square";
+          hat.frequency.setValueAtTime(920, now);
+          hat.frequency.exponentialRampToValueAtTime(320, now + 0.05);
+          hatG.gain.setValueAtTime(0.09, now);
+          hatG.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+          hat.connect(hatG);
+          hatG.connect(this.master);
+          hat.start(now);
+          hat.stop(now + 0.07);
+        }
+
+        // 3) 특수 타일 효과음
+        if (tileType === "reverse") {
+          const rev = this.ctx.createOscillator();
+          const revG = this.ctx.createGain();
+          rev.type = "sine";
+          rev.frequency.setValueAtTime(460, now);
+          rev.frequency.linearRampToValueAtTime(780, now + 0.08);
+          rev.frequency.linearRampToValueAtTime(520, now + 0.15);
+          revG.gain.setValueAtTime(0.24, now);
+          revG.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+          rev.connect(revG);
+          revG.connect(this.master);
+          rev.start(now);
+          rev.stop(now + 0.18);
+        } else if (tileType === "speedup") {
+          const spd = this.ctx.createOscillator();
+          const spdG = this.ctx.createGain();
+          spd.type = "sawtooth";
+          spd.frequency.setValueAtTime(440, now);
+          spd.frequency.exponentialRampToValueAtTime(1320, now + 0.16);
+          spdG.gain.setValueAtTime(0.16, now);
+          spdG.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          spd.connect(spdG);
+          spdG.connect(this.master);
+          spd.start(now);
+          spd.stop(now + 0.19);
+        } else if (tileType === "slowdown") {
+          const slw = this.ctx.createOscillator();
+          const slwG = this.ctx.createGain();
+          slw.type = "triangle";
+          slw.frequency.setValueAtTime(780, now);
+          slw.frequency.exponentialRampToValueAtTime(260, now + 0.22);
+          slwG.gain.setValueAtTime(0.24, now);
+          slwG.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+          slw.connect(slwG);
+          slwG.connect(this.master);
+          slw.start(now);
+          slw.stop(now + 0.25);
+        }
+      }
+
+      // 레벨업 화음
+      playLevelUp() {
+        if (this.muted) return;
+        this.unlock();
+        const now = this.ctx.currentTime;
+        const chord = [523.25, 659.25, 783.99, 1046.50];
+        chord.forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          const t = now + idx * 0.05;
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(f, t);
+          g.gain.setValueAtTime(0.2, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+          osc.connect(g);
+          g.connect(this.master);
+          osc.start(t);
+          osc.stop(t + 0.48);
+        });
+      }
+
+      // 충돌(게임 오버) 사운드
+      playCrash() {
+        if (this.muted) return;
+        this.unlock();
+        const now = this.ctx.currentTime;
+
+        const bufferLen = Math.floor(this.ctx.sampleRate * 0.32);
+        const buf = this.ctx.createBuffer(1, bufferLen, this.ctx.sampleRate);
+        const ch = buf.getChannelData(0);
+        for (let i = 0; i < bufferLen; i++) {
+          ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.11));
+        }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buf;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.value = 950;
+
+        const nGain = this.ctx.createGain();
+        nGain.gain.setValueAtTime(0.45, now);
+        nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+
+        noise.connect(filter);
+        filter.connect(nGain);
+        nGain.connect(this.master);
+        noise.start(now);
+
+        const sub = this.ctx.createOscillator();
+        const subG = this.ctx.createGain();
+        sub.type = "sawtooth";
+        sub.frequency.setValueAtTime(160, now);
+        sub.frequency.exponentialRampToValueAtTime(36, now + 0.35);
+        subG.gain.setValueAtTime(0.32, now);
+        subG.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+        sub.connect(subG);
+        subG.connect(this.master);
+        sub.start(now);
+        sub.stop(now + 0.38);
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // 3. 무결점 각도 계산 유틸리티
+    // --------------------------------------------------------------------------
+    function normalizeRad(rad) {
+      let a = (rad + Math.PI) % (Math.PI * 2);
+      if (a < 0) a += Math.PI * 2;
+      return a - Math.PI;
+    }
+
+    /**
+     * inAngle 에서 outAngle 까지 orbitDir(+1 시계, -1 반시계) 방향으로
+     * 회전해야 하는 정확한 양의 각도 변화량 ∈ (0, 2π] 을 계산합니다.
+     */
+    function computeTargetTravel(inAngle, outAngle, orbitDir) {
+      let delta = (outAngle - inAngle) * orbitDir;
+      while (delta <= 1e-4) delta += Math.PI * 2;
+      while (delta > Math.PI * 2 + 1e-4) delta -= Math.PI * 2;
+      return delta;
+    }
+
+    function degToRad(deg) {
+      return (deg * Math.PI) / 180;
+    }
+
+    // --------------------------------------------------------------------------
+    // 4. 게임 상태 객체
+    // --------------------------------------------------------------------------
+    const audio = new RhythmAudioEngine();
+
+    let savedBest = 0;
+    try {
+      savedBest = parseInt(localStorage.getItem(STORAGE_KEY_BEST) || "0", 10) || 0;
+    } catch (_) {
+      savedBest = 0;
+    }
+
+    const state = {
+      phase: "start",          // 'start' | 'countdown' | 'playing' | 'gameover'
+      autoPlay: false,
+      mode: "endless",         // 'endless' | 'ranked'
+      rankedBest: 0,
+      rankStatus: "",
+      rankSubmitted: false,
+
+      // 트랙 배열 (무한 생성 및 지나간 타일 정리)
+      tiles: [],
+      nextTileId: 0,
+      currentIndex: 0,         // 현재 피벗 행성이 고정된 tiles 배열 내 인덱스
+      tilesCleared: 0,         // 총 통과한 타일 수 (무한 점수)
+      bestScore: savedBest,
+      isNewRecord: false,
+
+      // 행성 공전 물리 상태
+      pivotPlanet: "fire",     // 'fire' | 'ice'
+      orbitDir: 1,             // +1: 시계 방향, -1: 반시계 방향
+      travelAngle: -3 * Math.PI, // 단조 증가 공전각 (카운트다운 -3π -> +π)
+      lastCountdownCue: 0,     // 마지막 재생된 카운트다운 박자 (1~4)
+
+      // 템포 & 난이도 상태
+      baseBPM: 90,
+      speedFactor: 1.0,
+      speedHoldTiles: 0,
+      currentBPM: 90,
+      maxBpmReached: 90,
+      currentTierLevel: 1,
+
+      // 정확도 & 콤보 통계
+      combo: 0,
+      perfectCount: 0,
+      goodCount: 0,
+      accuracySum: 0,
+      totalJudged: 0,
+      failReason: "",
+
+      // 카메라 & 시각 효과
+      camX: 0,
+      camY: 0,
+      camZoom: 1,
+      targetZoom: 1,
+      beatPulse: 0,
+      shakeTimer: 0,
+      shakeMag: 0,
+      bgTint: "#0b1422",
+
+      // 파티클 & 잔상
+      stars: [],
+      fireTrail: [],
+      iceTrail: [],
+      particles: [],
+      ripples: [],
+      floatTexts: []
+    };
+
+    // --------------------------------------------------------------------------
+    // 5. 무한 트랙 생성기 (우상향 바이어스 + 자동 백트래킹으로 1,000+타일 보장)
+    // --------------------------------------------------------------------------
+    const trackGen = {
+      heading: 0,         // 현재 진행 방향 (라디안)
+      simOrbitDir: 1,     // 생성 시점 기준 예상 공전 방향
+      simSpeedFactor: 1,  // 생성 시점 기준 예상 속도 배율
+      pendingQueue: []    // 예약된 다중 타일 패턴 큐 ({ deg, type })
+    };
+
+    // 랭킹전 맵 고정용 시드 난수 (모든 플레이어, 모든 시도에서 동일한 트랙)
+    const RANKED_SEED = 20261126;
+    function makeSeededRng(seed) {
+      let a = seed >>> 0;
+      return function () {
+        a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    let trackRand = Math.random;
+
+    function resetTrackGenerator() {
+      trackRand = state.mode === "ranked" ? makeSeededRng(RANKED_SEED) : Math.random;
+      state.tiles = [];
+      state.nextTileId = 0;
+      trackGen.heading = 0;
+      trackGen.simOrbitDir = 1;
+      trackGen.simSpeedFactor = 1.0;
+      trackGen.pendingQueue = [];
+
+      // 타일 0 (시작점) & 타일 1 (첫 직선 타일: targetTravel = π 보장)
+      pushRawTile(0, 0, "normal", 0);
+      pushRawTile(1, 0, "normal", 0);
+
+      // 초기 초보자 적응 직선 구간 4칸 추가 (총 5타일까지 완전 직선으로 박자 감각 습득)
+      for (let i = 0; i < 4; i++) {
+        appendStepSafely(0, "normal");
+      }
+
+      // 앞쪽에 최소 36개 타일 버퍼 유지
+      ensureUpcomingTiles(MIN_AHEAD_TILES);
+    }
+
+    function pushRawTile(x, y, type, outAngle) {
+      const idx = state.tiles.length;
+      const inAngle = idx === 0
+        ? normalizeRad(outAngle + Math.PI)
+        : Math.atan2(state.tiles[idx - 1].y - y, state.tiles[idx - 1].x - x);
+
+      state.tiles.push({
+        id: state.nextTileId++,
+        x,
+        y,
+        type,          // 'normal' | 'reverse' | 'speedup' | 'slowdown'
+        inAngle,
+        outAngle,
+        passed: idx === 0,
+        judgment: null,
+        // 백트래킹 복원용 스냅샷 메타데이터
+        genHeading: outAngle,
+        genOrbitDir: trackGen.simOrbitDir,
+        genSpeedFactor: trackGen.simSpeedFactor
+      });
+
+      if (idx > 0) {
+        const prev = state.tiles[idx - 1];
+        prev.outAngle = Math.atan2(y - prev.y, x - prev.x);
+      }
+    }
+
+    /**
+     * 후보 좌표 (nx, ny) 가 최근 타일들과 겹치거나 너무 가깝지 않은지 검사합니다.
+     * 또한 직전 타일과의 내각이 0도(완전 유턴 겹침)가 되는 것을 방지합니다.
+     */
+    function isPositionClear(nx, ny, ignoreLastN = 0) {
+      const endIdx = state.tiles.length - ignoreLastN;
+      if (endIdx <= 0) return true;
+
+      // 바로 이전 타일과의 유턴(180도 정반대 역주행) 방지
+      if (endIdx >= 2) {
+        const prev = state.tiles[endIdx - 1];
+        const prev2 = state.tiles[endIdx - 2];
+        const distToPrev2Sq = (nx - prev2.x) ** 2 + (ny - prev2.y) ** 2;
+        if (distToPrev2Sq < 0.25) return false;
+      }
+
+      // 최근 24개 타일과의 최소 거리 검사 (0.88 타일 반경 이상 이격)
+      const startIdx = Math.max(0, endIdx - 24);
+      for (let i = startIdx; i < endIdx; i++) {
+        const t = state.tiles[i];
+        const dx = nx - t.x;
+        const dy = ny - t.y;
+        if (dx * dx + dy * dy < 0.88 * 0.88) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    /**
+     * 후보 각도들 중 충돌이 없고 가장 여유 공간 + 우상향 진행성이 좋은 각도를 찾습니다.
+     */
+    function findBestCandidateAngle(preferredHeading) {
+      const last = state.tiles[state.tiles.length - 1];
+      const offsetsDeg = [0, 30, -30, 45, -45, 60, -60, 90, -90, 120, -120, 135, -135];
+
+      // 1차: 선호 각도 자체가 충돌 없는지 즉시 확인
+      const prefX = last.x + Math.cos(preferredHeading);
+      const prefY = last.y + Math.sin(preferredHeading);
+      if (isPositionClear(prefX, prefY)) {
+        return { heading: preferredHeading, x: prefX, y: prefY };
+      }
+
+      // 2차: 대체 각도 중 (1) 기존 타일들과의 최소 거리 + (2) 우상향(-22.5°) 진행 바이어스 점수가 가장 높은 방향 선택
+      let bestScore = -Infinity;
+      let bestCandidate = null;
+      const forwardBiasAngle = degToRad(-20); // 우측 및 약간 위쪽 대각선 바이어스
+
+      for (const offDeg of offsetsDeg) {
+        const candHeading = normalizeRad(trackGen.heading + degToRad(offDeg));
+        const cx = last.x + Math.cos(candHeading);
+        const cy = last.y + Math.sin(candHeading);
+        if (!isPositionClear(cx, cy)) continue;
+
+        let minDistSq = 999;
+        const lookback = Math.min(state.tiles.length, 24);
+        for (let i = state.tiles.length - lookback; i < state.tiles.length; i++) {
+          const t = state.tiles[i];
+          const d2 = (cx - t.x) ** 2 + (cy - t.y) ** 2;
+          if (d2 < minDistSq) minDistSq = d2;
+        }
+
+        // 우상향 방향일수록 가산점 부여 -> 트랙이 제자리에서 맴돌지 않고 계속 전진
+        const directionalAlignment = Math.cos(normalizeRad(candHeading - forwardBiasAngle));
+        const score = Math.min(minDistSq, 6.0) + directionalAlignment * 0.85;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestCandidate = { heading: candHeading, x: cx, y: cy };
+        }
+      }
+
+      return bestCandidate;
+    }
+
+    /**
+     * 막다른 길(Dead-end)에 갇혔을 때 최근 2~3개 타일을 안전하게 롤백하고
+     * 우상향 방향(0° 또는 -45°/+45°)으로 경로를 재개척하는 백트래킹 함수
+     */
+    function backtrackAndReroute() {
+      // 플레이어가 이미 지나갔거나 바로 밟고 있는 타일(currentIndex + 2 이내)은 절대 롤백하지 않음
+      const minSafeLen = Math.max(3, state.currentIndex + 3);
+      const maxPop = Math.min(3, state.tiles.length - minSafeLen);
+
+      if (maxPop > 0) {
+        state.tiles.splice(state.tiles.length - maxPop, maxPop);
+        state.nextTileId = state.tiles[state.tiles.length - 1].id + 1;
+        const tail = state.tiles[state.tiles.length - 1];
+        trackGen.heading = tail.genHeading;
+        trackGen.simOrbitDir = tail.genOrbitDir;
+        trackGen.simSpeedFactor = tail.genSpeedFactor;
+        trackGen.pendingQueue = [];
+      }
+
+      // 롤백 후 우상향 방향으로 탈출 각도 재탐색
+      const escapeAngles = [0, degToRad(-30), degToRad(30), degToRad(-60), degToRad(60), degToRad(-90), degToRad(90)];
+      const last = state.tiles[state.tiles.length - 1];
+      for (const esc of escapeAngles) {
+        const ex = last.x + Math.cos(esc);
+        const ey = last.y + Math.sin(esc);
+        if (isPositionClear(ex, ey)) {
+          return { heading: esc, x: ex, y: ey };
+        }
+      }
+
+      // 최후의 안전 폴백: 우측(+1, 0)으로 강제 전진 (절대 멈추지 않음)
+      return { heading: 0, x: last.x + 1, y: last.y };
+    }
+
+    function appendStepSafely(deltaAngleRad, requestedType) {
+      const last = state.tiles[state.tiles.length - 1];
+      const estimatedIndex = state.nextTileId;
+      const estBaseBPM = computeBaseBpmForTiles(estimatedIndex);
+      const estBPM = Math.min(285, Math.max(82, estBaseBPM * trackGen.simSpeedFactor));
+      const estOmega = (estBPM / 60) * Math.PI;
+
+      // 우상향 글로벌 바이어스 살짝 반영 (선호 각도가 직선일 때 살짝 우상향 복원 유도)
+      let preferredHeading = normalizeRad(trackGen.heading + deltaAngleRad);
+      if (Math.abs(deltaAngleRad) < 1e-4 && Math.abs(preferredHeading) > degToRad(105)) {
+        // 뒤쪽으로 너무 오래 향하고 있으면 자연스럽게 우상향 쪽으로 유도
+        const pull = preferredHeading > 0 ? -degToRad(45) : degToRad(45);
+        preferredHeading = normalizeRad(preferredHeading + pull);
+      }
+
+      let candidate = findBestCandidateAngle(preferredHeading);
+      if (!candidate) {
+        candidate = backtrackAndReroute();
+      }
+
+      const refreshedLast = state.tiles[state.tiles.length - 1];
+      const chosenHeading = candidate.heading;
+      const chosenX = candidate.x;
+      const chosenY = candidate.y;
+
+      // 반응 시간 검증: refreshedLast 타일에서 새 타일로 넘어가는 시간이
+      // MIN_REACTION_SEC (0.18초) 미만이면 refreshedLast에 역회전(reverse)을 부여해 넓은 회전각으로 보정
+      let tileType = requestedType;
+      const incomingAngleOnLast = refreshedLast.inAngle;
+      const outgoingAngleOnLast = Math.atan2(chosenY - refreshedLast.y, chosenX - refreshedLast.x);
+      const sweep = computeTargetTravel(incomingAngleOnLast, outgoingAngleOnLast, trackGen.simOrbitDir);
+
+      if (sweep / estOmega < MIN_REACTION_SEC && state.tiles.length > 2) {
+        if (refreshedLast.type === "normal") {
+          refreshedLast.type = "reverse";
+          trackGen.simOrbitDir *= -1;
+          refreshedLast.genOrbitDir = trackGen.simOrbitDir;
+        }
+      }
+
+      // 특수 타일 상태 시뮬레이션 갱신
+      if (tileType === "reverse") {
+        trackGen.simOrbitDir *= -1;
+      } else if (tileType === "speedup") {
+        trackGen.simSpeedFactor = Math.min(1.26, trackGen.simSpeedFactor * 1.18);
+      } else if (tileType === "slowdown") {
+        trackGen.simSpeedFactor = Math.max(0.78, trackGen.simSpeedFactor * 0.82);
+      } else {
+        trackGen.simSpeedFactor += (1.0 - trackGen.simSpeedFactor) * 0.06;
+      }
+
+      trackGen.heading = chosenHeading;
+      pushRawTile(chosenX, chosenY, tileType, chosenHeading);
+    }
+
+    /**
+     * 타일 깊이(depth)에 따라 초보자 친화적인 패턴부터 고난도 패턴까지 단계적으로 큐에 추가합니다.
+     */
+    function enqueuePatternForCurrentDepth() {
+      const depth = state.nextTileId;
+      const r = trackRand();
+
+      if (depth <= 15) {
+        // [Tiles 0–15] Lv.1 입문 · 여유로운 리듬 (90 BPM):
+        // 대부분 직선(180° 비트) + 가끔 쉬운 90도 코너 1회 (특수 타일 없음)
+        if (r < 0.72) {
+          trackGen.pendingQueue.push(
+            { deg: 0, type: "normal" },
+            { deg: 0, type: "normal" }
+          );
+        } else {
+          const sign = trackRand() < 0.5 ? 1 : -1;
+          trackGen.pendingQueue.push(
+            { deg: 90 * sign, type: "normal" },
+            { deg: 0, type: "normal" },
+            { deg: 0, type: "normal" }
+          );
+        }
+      } else if (depth <= 30) {
+        // [Tiles 16–30] Lv.2 기본 코너 (95–108 BPM):
+        // 깔끔한 90° 및 270° 코너 중심, 급격한 역회전이나 변속 없음
+        if (r < 0.35) {
+          trackGen.pendingQueue.push(
+            { deg: 0, type: "normal" },
+            { deg: 0, type: "normal" }
+          );
+        } else if (r < 0.72) {
+          const sign = trackRand() < 0.5 ? 1 : -1;
+          trackGen.pendingQueue.push(
+            { deg: 90 * sign, type: "normal" },
+            { deg: -90 * sign, type: "normal" },
+            { deg: 0, type: "normal" }
+          );
+        } else {
+          const sign = trackRand() < 0.5 ? 1 : -1;
+          trackGen.pendingQueue.push(
+            { deg: 90 * sign, type: "normal" },
+            { deg: 90 * sign, type: "normal" },
+            { deg: -90 * sign, type: "normal" }
+          );
+        }
+      } else if (depth <= 55) {
+        // [Tiles 31–55] Lv.3 엇박과 소용돌이 (110–132 BPM):
+        // 역회전(🌀) 타일과 계단 패턴을 서서히 도입
+        if (r < 0.34) {
+          trackGen.pendingQueue.push(
+            { deg: 0, type: "reverse" },
+            { deg: 0, type: "normal" },
+            { deg: 0, type: "normal" }
+          );
+        } else if (r < 0.70) {
+          const sign = trackRand() < 0.5 ? 1 : -1;
+          trackGen.pendingQueue.push(
+            { deg: 90 * sign, type: "normal" },
+            { deg: -90 * sign, type: "normal" },
+            { deg: 90 * sign, type: "normal" },
+            { deg: -90 * sign, type: "normal" }
+          );
+        } else {
+          const sign = trackRand() < 0.5 ? 1 : -1;
+          trackGen.pendingQueue.push(
+            { deg: 45 * sign, type: "normal" },
+            { deg: -45 * sign, type: "reverse" },
+            { deg: 0, type: "normal" }
+          );
+        }
+      } else if (depth <= 85) {
+        // [Tiles 56–85] Lv.4 변속의 리듬 (135–165 BPM):
+        // 가속(🐇)과 감속(🐌) 타일 + 계단/역회전 연계
+        if (r < 0.28) {
+          trackGen.pendingQueue.push(
+            { deg: 0, type: "speedup" },
+            { deg: 0, type: "normal" },
+            { deg: 0, type: "normal" },
+            { deg: 0, type: "normal" }
+          );
+        } else if (r < 0.52) {
+          const sign = trackRand() < 0.5 ? 1 : -1;
+          trackGen.pendingQueue.push(
+            { deg: 0, type: "slowdown" },
+            { deg: 45 * sign, type: "reverse" },
+            { deg: -45 * sign, type: "normal" }
+          );
+        } else if (r < 0.78) {
+          const sign = trackRand() < 0.5 ? 1 : -1;
+          trackGen.pendingQueue.push(
+            { deg: 90 * sign, type: "normal" },
+            { deg: -90 * sign, type: "normal" },
+            { deg: 90 * sign, type: "reverse" },
+            { deg: 0, type: "normal" }
+          );
+        } else {
+          const sign = trackRand() < 0.5 ? 1 : -1;
+          trackGen.pendingQueue.push(
+            { deg: 60 * sign, type: "normal" },
+            { deg: -60 * sign, type: "normal" },
+            { deg: 60 * sign, type: "normal" }
+          );
+        }
+      } else {
+        // [Tiles 86+] Lv.5 무한의 한계돌파 (170 -> 265+ BPM):
+        // 고속 계단, 3연음 웨이브, 역회전 및 변속 복합 패턴
+        if (r < 0.28) {
+          const sign = trackRand() < 0.5 ? 1 : -1;
+          trackGen.pendingQueue.push(
+            { deg: 90 * sign, type: "normal" },
+            { deg: -90 * sign, type: "reverse" },
+            { deg: 90 * sign, type: "normal" },
+            { deg: -90 * sign, type: "reverse" },
+            { deg: 0, type: "normal" }
+          );
+        } else if (r < 0.56) {
+          const sign = trackRand() < 0.5 ? 1 : -1;
+          trackGen.pendingQueue.push(
+            { deg: 0, type: "speedup" },
+            { deg: 60 * sign, type: "normal" },
+            { deg: -60 * sign, type: "normal" },
+            { deg: 60 * sign, type: "normal" },
+            { deg: -60 * sign, type: "normal" }
+          );
+        } else if (r < 0.80) {
+          const sign = trackRand() < 0.5 ? 1 : -1;
+          trackGen.pendingQueue.push(
+            { deg: 45 * sign, type: "reverse" },
+            { deg: -90 * sign, type: "normal" },
+            { deg: 45 * sign, type: "reverse" },
+            { deg: 0, type: "normal" }
+          );
+        } else {
+          trackGen.pendingQueue.push(
+            { deg: 0, type: "slowdown" },
+            { deg: 0, type: "reverse" },
+            { deg: 0, type: "speedup" },
+            { deg: 0, type: "normal" }
+          );
+        }
+      }
+    }
+
+    function ensureUpcomingTiles(minAhead = MIN_AHEAD_TILES) {
+      let guard = 0;
+      while (state.tiles.length - state.currentIndex < minAhead && guard < 120) {
+        guard++;
+        if (trackGen.pendingQueue.length === 0) {
+          enqueuePatternForCurrentDepth();
+        }
+        const nextStep = trackGen.pendingQueue.shift();
+        appendStepSafely(degToRad(nextStep.deg), nextStep.type);
+      }
+
+      // 지나간 오래된 타일 메모리 정리 (현재 피벗 기준 18칸 뒤까지만 유지)
+      const pruneThreshold = 18;
+      if (state.currentIndex > pruneThreshold) {
+        const removeCount = state.currentIndex - pruneThreshold;
+        state.tiles.splice(0, removeCount);
+        state.currentIndex -= removeCount;
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // 6. DOM 요소 참조 및 UI 업데이트
+    // --------------------------------------------------------------------------
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const tierBadge = document.getElementById("tierBadge");
+    const tierDot = document.getElementById("tierDot");
+    const tierLabel = document.getElementById("tierLabel");
+    const hudDistance = document.getElementById("hudDistance");
+    const hudBest = document.getElementById("hudBest");
+    const hudBpm = document.getElementById("hudBpm");
+    const hudAccuracy = document.getElementById("hudAccuracy");
+
+    const btnAutoPlay = document.getElementById("btnAutoPlay");
+    const autoDot = document.getElementById("autoDot");
+    const btnMute = document.getElementById("btnMute");
+    const iconAudioOn = document.getElementById("iconAudioOn");
+    const iconAudioOff = document.getElementById("iconAudioOff");
+    const muteText = document.getElementById("muteText");
+    const btnRestart = document.getElementById("btnRestart");
+
+    const milestoneContainer = document.getElementById("milestoneContainer");
+    const modalOverlay = document.getElementById("modalOverlay");
+    const modalBadge = document.getElementById("modalBadge");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalDesc = document.getElementById("modalDesc");
+    const startGuide = document.getElementById("startGuide");
+    const resultStats = document.getElementById("resultStats");
+    const newRecordBanner = document.getElementById("newRecordBanner");
+    const statDistance = document.getElementById("statDistance");
+    const statBest = document.getElementById("statBest");
+    const statTier = document.getElementById("statTier");
+    const statMaxBpm = document.getElementById("statMaxBpm");
+    const statAccuracy = document.getElementById("statAccuracy");
+    const statPerfect = document.getElementById("statPerfect");
+    const statGood = document.getElementById("statGood");
+    const btnStartRetry = document.getElementById("btnStartRetry");
+    const btnToMenu = document.getElementById("btnToMenu");
+    const modeEndless = document.getElementById("modeEndless");
+    const modeRanked = document.getElementById("modeRanked");
+    const modeBadge = document.getElementById("modeBadge");
+    const rankSaveStatus = document.getElementById("rankSaveStatus");
+    const rankModal = document.getElementById("rankModal");
+    const rankList = document.getElementById("rankList");
+    const rankMe = document.getElementById("rankMe");
+    const userChip = document.getElementById("userChip");
+    const userNameEl = document.getElementById("userName");
+    const btnLoginOpen = document.getElementById("btnLoginOpen");
+    const btnLogout = document.getElementById("btnLogout");
+
+    // --------------------------------------------------------------------------
+    // 7-B. 로그인 / 모드 / 랭킹전 (Firebase Auth + Realtime Database)
+    // --------------------------------------------------------------------------
+    const RANK_PATH = "adofai_ranking";
+
+    function getUser() {
+      const A = window.OD && OD.auth;
+      return A && A.ready ? A.current() : null;
+    }
+    function getRankDb() {
+      try {
+        if (typeof firebase === "undefined" || !firebase.database) return null;
+        const cfg = window.OD_FIREBASE_CONFIG || {};
+        try { return firebase.app().database(cfg.databaseURL); } catch (_) { return firebase.database(); }
+      } catch (_) { return null; }
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function syncAutoUI() {
+      const locked = state.mode === "ranked";
+      if (locked) state.autoPlay = false;
+      btnAutoPlay.disabled = locked;
+      btnAutoPlay.classList.toggle("auto-locked", locked);
+      btnAutoPlay.title = locked ? "랭킹전에서는 자동 연주를 쓸 수 없어요" : "자동 연주 (최고 기록 저장 비활성화)";
+      if (state.autoPlay) {
+        btnAutoPlay.classList.add("text-emerald-300", "border-emerald-400/50");
+        autoDot.className = "w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]";
+      } else {
+        btnAutoPlay.classList.remove("text-emerald-300", "border-emerald-400/50");
+        autoDot.className = "w-2 h-2 rounded-full bg-slate-500";
+      }
+    }
+
+    function applyModeUI() {
+      const ranked = state.mode === "ranked";
+      modeBadge.textContent = ranked ? "🏆 랭킹전" : "무한 모드";
+      modeBadge.className = "text-[11px] font-bold px-2 py-0.5 rounded-full border " +
+        (ranked ? "bg-amber-500/20 text-amber-300 border-amber-400/40" : "bg-white/10 text-slate-200 border-white/10");
+      modeEndless.classList.toggle("active", !ranked);
+      modeRanked.classList.toggle("active", ranked);
+      btnStartRetry.textContent = state.phase === "gameover" ? "다시 도전 (Space)" : (ranked ? "랭킹전 시작 (Space)" : "무한 모드 시작 (Space)");
+      syncAutoUI();
+      updateHUD();
+    }
+
+    function setMode(m) {
+      if (m === "ranked" && !getUser()) {
+        if (window.OD && OD.showGate) OD.showGate("랭킹전은 로그인이 필요해요.");
+        return;
+      }
+      if (state.phase !== "start" && state.phase !== "gameover") return;
+      state.mode = m;
+      if (m === "ranked") loadMyRankedBest();
+      if (state.phase === "start") { showStartModal(); }
+      applyModeUI();
+    }
+
+    async function loadMyRankedBest() {
+      const u = getUser(), db = getRankDb();
+      if (!u || !db) return;
+      try {
+        const snap = await db.ref(RANK_PATH + "/" + u.uid + "/score").once("value");
+        state.rankedBest = Number(snap.val()) || 0;
+        updateHUD();
+      } catch (e) { console.warn("[랭킹] 내 기록 불러오기 실패", e); }
+    }
+
+    function renderRankStatus() {
+      if (state.mode === "ranked" && state.rankStatus) {
+        rankSaveStatus.textContent = state.rankStatus;
+        rankSaveStatus.classList.remove("hidden");
+      } else {
+        rankSaveStatus.classList.add("hidden");
+      }
+    }
+
+    async function submitRankedScore() {
+      if (state.mode !== "ranked" || state.rankSubmitted) return;
+      state.rankSubmitted = true;               // 한 판당 한 번만
+      const rid = state.runId;
+      const setStatus = (t) => { if (rid === state.runId) { state.rankStatus = t; renderRankStatus(); } };
+      const score = state.tilesCleared;
+      if (score <= 0) { setStatus("기록이 없어 등록하지 않았어요."); return; }
+      const u = getUser(), db = getRankDb();
+      if (!u || !db) { setStatus("로그인 또는 서버 연결이 없어 기록을 저장하지 못했어요."); return; }
+      setStatus("서버에 기록 저장 중...");
+      const acc = state.totalJudged > 0 ? Math.round((state.accuracySum / state.totalJudged) * 10) / 10 : 100;
+      const entry = {
+        name: (OD.auth.label(u) || "PLAYER").slice(0, 20),
+        score: score,
+        bpm: state.maxBpmReached,
+        accuracy: acc,
+        updatedAt: firebase.database.ServerValue.TIMESTAMP
+      };
+      try {
+        const res = await db.ref(RANK_PATH + "/" + u.uid).transaction((cur) => {
+          if (cur && Number(cur.score) >= score) return;   // 기존 기록이 더 높으면 변경 없음
+          return entry;
+        });
+        if (res.committed) {
+          state.rankedBest = Math.max(state.rankedBest, score);
+          setStatus("🏆 랭킹 등록 완료! 내 최고 기록 " + score + "타일");
+        } else {
+          const best = res.snapshot && res.snapshot.val() ? Number(res.snapshot.val().score) : state.rankedBest;
+          state.rankedBest = Math.max(state.rankedBest, best || 0);
+          setStatus("이번 기록(" + score + ")은 내 최고 기록(" + best + ")보다 낮아 유지됐어요.");
+        }
+      } catch (e) {
+        console.error("[랭킹] 저장 실패", e);
+        setStatus("기록 저장 실패: Firebase 데이터베이스 규칙을 확인해 주세요. (" + ((e && e.code) || (e && e.message) || "오류") + ")");
+      }
+      updateHUD();
+      if (state.phase === "gameover" && rid === state.runId) { statBest.textContent = state.rankedBest; }
+    }
+
+    async function openLeaderboard() {
+      rankModal.hidden = false;
+      rankMe.classList.add("hidden");
+      rankList.innerHTML = '<div class="text-center text-slate-400 py-8">불러오는 중...</div>';
+      const db = getRankDb();
+      if (!db) { rankList.innerHTML = '<div class="text-center text-rose-300 py-8">서버에 연결할 수 없어요. (Firebase를 불러오지 못함)</div>'; return; }
+      try {
+        const snap = await db.ref(RANK_PATH).orderByChild("score").limitToLast(30).once("value");
+        const rows = [];
+        snap.forEach((c) => { const v = c.val() || {}; rows.push({ uid: c.key, name: v.name || "PLAYER", score: Number(v.score) || 0, bpm: v.bpm || 0, accuracy: v.accuracy }); });
+        rows.sort((a, b) => b.score - a.score);
+        const me = getUser();
+        if (!rows.length) { rankList.innerHTML = '<div class="text-center text-slate-400 py-8">아직 등록된 기록이 없어요. 첫 번째 주인공이 되어보세요!</div>'; return; }
+        rankList.innerHTML = rows.map((r, i) => {
+          const mine = me && r.uid === me.uid;
+          const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i + 1);
+          return `<div class="flex items-center gap-2 px-3 py-2 rounded-xl border ${mine ? "bg-emerald-500/15 border-emerald-400/40" : "bg-slate-900/70 border-slate-700/60"}">
+            <span class="w-7 text-center font-black ${i < 3 ? "text-lg" : "text-slate-400"}">${medal}</span>
+            <span class="flex-1 truncate font-bold ${mine ? "text-emerald-300" : "text-slate-100"}">${escapeHtml(r.name)}</span>
+            <span class="text-[11px] text-slate-400 tabular-nums">${r.bpm} BPM</span>
+            <span class="font-black text-amber-300 tabular-nums w-14 text-right">${r.score}</span>
+          </div>`;
+        }).join("");
+        const mineIdx = me ? rows.findIndex((r) => r.uid === me.uid) : -1;
+        if (me && mineIdx >= 0) {
+          rankMe.textContent = "내 순위: " + (mineIdx + 1) + "위 · " + rows[mineIdx].score + "타일";
+          rankMe.classList.remove("hidden");
+        } else if (me && state.rankedBest > 0) {
+          rankMe.textContent = "내 최고 기록 " + state.rankedBest + "타일 (TOP 30 밖)";
+          rankMe.classList.remove("hidden");
+        }
+      } catch (e) {
+        console.error("[랭킹] 불러오기 실패", e);
+        rankList.innerHTML = '<div class="text-center text-rose-300 py-8 text-sm">랭킹을 불러오지 못했어요.<br/>Firebase 데이터베이스 규칙(읽기 허용, score 인덱스)을 확인해 주세요.</div>';
+      }
+    }
+
+    function onAuthChanged(u) {
+      if (u) {
+        userNameEl.textContent = OD.auth.label(u);
+        userChip.classList.remove("hidden"); userChip.classList.add("inline-flex");
+        btnLogout.classList.remove("hidden");
+        btnLoginOpen.classList.add("hidden");
+        loadMyRankedBest();
+      } else {
+        userChip.classList.add("hidden"); userChip.classList.remove("inline-flex");
+        btnLogout.classList.add("hidden");
+        btnLoginOpen.classList.remove("hidden");
+        state.rankedBest = 0;
+        if (state.mode === "ranked") {
+          state.mode = "endless";
+          state.phase = "start";
+          initRun(false);
+        }
+      }
+      applyModeUI();
+    }
+    window.addEventListener("od-auth", (e) => onAuthChanged(e.detail));
+
+    function updateHUD() {
+      hudDistance.textContent = state.tilesCleared;
+      hudBest.textContent = state.mode === "ranked" ? state.rankedBest : state.bestScore;
+      hudBpm.textContent = state.currentBPM;
+
+      const acc = state.totalJudged > 0
+        ? (state.accuracySum / state.totalJudged).toFixed(1)
+        : "100.0";
+      hudAccuracy.textContent = `${acc}%`;
+
+      const tier = getTierForTiles(state.tilesCleared);
+      tierBadge.className = `glass-pill px-3.5 py-2 rounded-2xl flex items-center gap-2 text-xs sm:text-sm font-bold ${tier.badgeClass}`;
+      tierDot.className = `w-2 h-2 rounded-full ${tier.dotClass}`;
+      tierLabel.textContent = tier.name;
+    }
+
+    function showMilestoneBanner(tier) {
+      const el = document.createElement("div");
+      el.className = `glass-pill px-5 py-2.5 rounded-2xl text-sm sm:text-base font-black tracking-tight shadow-2xl milestone-animate ${tier.badgeClass}`;
+      el.textContent = `⚡ ${tier.name} 진입!`;
+      milestoneContainer.innerHTML = "";
+      milestoneContainer.appendChild(el);
+    }
+
+    // --------------------------------------------------------------------------
+    // 7. 캔버스 리사이즈 & 우주 배경 별 초기화
+    // --------------------------------------------------------------------------
+    let viewW = window.innerWidth;
+    let viewH = window.innerHeight;
+
+    function initStars() {
+      state.stars = [];
+      for (let i = 0; i < 160; i++) {
+        state.stars.push({
+          x: Math.random() * 2600 - 1300,
+          y: Math.random() * 1800 - 900,
+          r: Math.random() * 1.9 + 0.5,
+          parallax: Math.random() * 0.35 + 0.08,
+          phase: Math.random() * Math.PI * 2,
+          twinkleSpeed: Math.random() * 2.2 + 1.0
+        });
+      }
+    }
+
+    function handleResize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      viewW = window.innerWidth;
+      viewH = window.innerHeight;
+      canvas.width = Math.floor(viewW * dpr);
+      canvas.height = Math.floor(viewH * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      recomputeTargetZoom();
+    }
+
+    function recomputeTargetZoom() {
+      const mobileFactor = viewW < 640 ? 0.78 : 1.0;
+      const speedZoomOut = Math.max(0.76, 1.0 - Math.max(0, state.currentBPM - 105) * 0.0014);
+      state.targetZoom = mobileFactor * speedZoomOut;
+    }
+
+    window.addEventListener("resize", handleResize);
+
+    // --------------------------------------------------------------------------
+    // 8. 게임 초기화 / 시작 / 종료 흐름
+    // --------------------------------------------------------------------------
+    function initRun(startImmediately = false) {
+      // 랭킹전 도중 재시작하면 그때까지의 기록을 제출
+      if (state.mode === "ranked" && (state.phase === "playing" || state.phase === "countdown")) {
+        submitRankedScore();
+      }
+      // 랭킹전은 로그인 필수
+      if (state.mode === "ranked" && !getUser()) {
+        state.mode = "endless";
+        startImmediately = false;
+        if (window.OD && OD.showGate) OD.showGate("랭킹전은 로그인이 필요해요.");
+      }
+      // 랭킹전에서는 자동 연주 강제 해제
+      if (state.mode === "ranked" && state.autoPlay) {
+        state.autoPlay = false;
+      }
+      state.rankSubmitted = false;
+      state.rankStatus = "";
+      state.runId = (state.runId || 0) + 1;
+      applyModeUI();
+      resetTrackGenerator();
+
+      state.currentIndex = 0;
+      state.tilesCleared = 0;
+      state.isNewRecord = false;
+
+      state.pivotPlanet = "fire";
+      state.orbitDir = 1;
+      // 카운트다운 시작 위치: -3π (Beat 1: -3π, Beat 2: -2π, Beat 3: -1π, Beat 4: 0, Hit 1: +π)
+      state.travelAngle = -3 * Math.PI;
+      state.lastCountdownCue = 0;
+
+      state.baseBPM = 90;
+      state.speedFactor = 1.0;
+      state.speedHoldTiles = 0;
+      state.currentBPM = 90;
+      state.maxBpmReached = 90;
+      state.currentTierLevel = 1;
+      state.bgTint = DIFFICULTY_TIERS[0].bgTint;
+
+      state.combo = 0;
+      state.perfectCount = 0;
+      state.goodCount = 0;
+      state.accuracySum = 0;
+      state.totalJudged = 0;
+      state.failReason = "";
+
+      state.camX = 0;
+      state.camY = 0;
+      state.beatPulse = 0;
+      state.shakeTimer = 0;
+      state.fireTrail = [];
+      state.iceTrail = [];
+      state.particles = [];
+      state.ripples = [];
+      state.floatTexts = [];
+      audio.scaleIndex = 0;
+
+      recomputeTargetZoom();
+      state.camZoom = state.targetZoom;
+      updateHUD();
+
+      if (startImmediately) {
+        audio.unlock();
+        state.phase = "countdown";
+        state.lastCountdownCue = 1;
+        state.beatPulse = 0.85;
+        audio.playCountdownBeat(1);
+        modalOverlay.classList.add("hidden");
+      } else {
+        state.phase = "start";
+        showStartModal();
+      }
+    }
+
+    function showStartModal() {
+      const ranked = state.mode === "ranked";
+      modalBadge.textContent = ranked ? "RANKED MATCH" : "ENDLESS RHYTHM CHALLENGE";
+      modalBadge.className = "inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold bg-white/10 text-amber-300 border border-white/15 mb-3";
+      modalTitle.textContent = ranked ? "랭킹전" : "불과 얼음의 무한 질주";
+      if (ranked) {
+        modalDesc.innerHTML = `<span class="text-amber-300 font-semibold">자동 연주 없이</span> 순수 실력으로 도전!<br/>한 번 실패하면 끝나며, <span class="text-emerald-300 font-bold">나의 최고 기록</span>이 서버 랭킹에 저장돼요.`;
+      } else modalDesc.innerHTML = `<span class="text-[#ff7a59] font-bold">불</span>과 <span class="text-[#38bdf8] font-bold">얼음</span> 두 행성이 서로를 축으로 공전합니다.<br/><span class="text-amber-300 font-semibold">4박자 카운트다운(1, 2, 3, 4)</span> 후 행성이 다음 타일에 겹칠 때 키를 누르세요!`;
+
+      startGuide.classList.remove("hidden");
+      resultStats.classList.add("hidden");
+      btnStartRetry.textContent = ranked ? "랭킹전 시작 (Space)" : "무한 모드 시작 (Space)";
+      btnToMenu.classList.add("hidden");
+      modalOverlay.classList.remove("hidden");
+    }
+
+    function showGameOverModal() {
+      const acc = state.totalJudged > 0
+        ? (state.accuracySum / state.totalJudged).toFixed(1)
+        : "100.0";
+      const reachedTier = getTierForTiles(state.tilesCleared);
+
+      modalBadge.textContent = "GAME OVER";
+      modalBadge.className = "inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-400/30 mb-3";
+      modalTitle.textContent = state.failReason || "박자를 놓쳤습니다!";
+      modalDesc.textContent = state.mode === "ranked"
+        ? "랭킹전 도전이 끝났어요. 다시 도전해 순위를 올려보세요!"
+        : state.autoPlay
+          ? "자동 연주 모드로 시범 주행을 마쳤습니다."
+          : "행성이 다음 타일의 중심에 도달하는 순간에 맞춰 입력해보세요!";
+
+      if (state.isNewRecord && !state.autoPlay) {
+        newRecordBanner.classList.remove("hidden");
+      } else {
+        newRecordBanner.classList.add("hidden");
+      }
+
+      statDistance.textContent = state.tilesCleared;
+      statBest.textContent = state.mode === "ranked" ? state.rankedBest : state.bestScore;
+      statTier.textContent = `Lv.${reachedTier.level}`;
+      statMaxBpm.textContent = state.maxBpmReached;
+      statAccuracy.textContent = `${acc}%`;
+      statPerfect.textContent = state.perfectCount;
+      statGood.textContent = state.goodCount;
+
+      startGuide.classList.add("hidden");
+      resultStats.classList.remove("hidden");
+      btnStartRetry.textContent = "다시 도전 (Space)";
+      btnToMenu.classList.remove("hidden");
+      renderRankStatus();
+      modalOverlay.classList.remove("hidden");
+    }
+
+    // --------------------------------------------------------------------------
+    // 9. 판정 및 입력 처리 (초반 ±52° -> 이후 ±42° 관대한 판정 창 적용)
+    // --------------------------------------------------------------------------
+    function getCurrentTile() {
+      return state.tiles[state.currentIndex];
+    }
+
+    function getTargetTravelForCurrent() {
+      const curr = getCurrentTile();
+      return computeTargetTravel(curr.inAngle, curr.outAngle, state.orbitDir);
+    }
+
+    function getHitWindowRad(omega) {
+      // 초반 15타일은 ±52° (0.908 rad), 이후는 ±42° (0.733 rad) 기반 동적 보정
+      const baseWindow = state.tilesCleared < 15 ? degToRad(52) : degToRad(42);
+      return Math.min(degToRad(56), Math.max(baseWindow, omega * 0.16));
+    }
+
+    function handleUserTap() {
+      if (state.phase === "start") {
+        initRun(true);
+        return;
+      }
+
+      if (state.phase === "gameover") {
+        initRun(true);
+        return;
+      }
+
+      if (state.phase !== "countdown" && state.phase !== "playing") {
+        return;
+      }
+
+      const omega = (state.currentBPM / 60) * Math.PI;
+      const targetTravel = getTargetTravelForCurrent();
+      const hitWindow = getHitWindowRad(omega);
+
+      // 카운트다운 중(travelAngle < 0) 실수 탭 무시 보호; 단 첫 타일 판정 영역 진입 시 즉시 허용
+      if (state.travelAngle < 0) {
+        if (Math.abs(state.travelAngle - targetTravel) <= hitWindow) {
+          state.phase = "playing";
+          commitTileHit(false);
+        }
+        return;
+      }
+
+      const diff = state.travelAngle - targetTravel;
+
+      // 너무 일찍 누른 경우
+      if (diff < -hitWindow) {
+        triggerCrash("너무 빨랐어요!");
+        return;
+      }
+
+      // 유효 판정 범위 내 타격 성공!
+      if (Math.abs(diff) <= hitWindow) {
+        state.phase = "playing";
+        commitTileHit(false);
+      }
+    }
+
+    function commitTileHit(isAuto, overshootRad = 0) {
+      const nextTile = state.tiles[state.currentIndex + 1];
+      if (!nextTile) return;
+
+      const targetTravel = getTargetTravelForCurrent();
+      const omega = (state.currentBPM / 60) * Math.PI;
+      const hitWindow = getHitWindowRad(omega);
+      const signedDiff = isAuto ? 0 : (state.travelAngle - targetTravel);
+      const absDiff = Math.abs(signedDiff);
+
+      // 판정 등급 계산 (`완벽!`, `정확!`, `빠름`, `느림`)
+      let judgment = "perfect";
+      let label = "완벽!";
+      let color = "#34d399";
+      let accPoints = 100;
+
+      if (isAuto || absDiff <= hitWindow * 0.34) {
+        judgment = "perfect";
+        label = "완벽!";
+        color = "#34d399";
+        accPoints = 100;
+        state.perfectCount++;
+      } else if (absDiff <= hitWindow * 0.62) {
+        judgment = "exact";
+        label = "정확!";
+        color = "#22d3ee";
+        accPoints = 90;
+        state.perfectCount++;
+      } else {
+        judgment = "good";
+        label = signedDiff < 0 ? "빠름" : "느림";
+        color = "#fbbf24";
+        accPoints = 72;
+        state.goodCount++;
+      }
+
+      state.totalJudged++;
+      state.accuracySum += accPoints;
+      state.combo++;
+      state.tilesCleared++;
+
+      // 최고 기록 갱신 (자동 연주 비활성화 시에만 저장)
+      if (state.mode === "ranked") {
+        if (state.tilesCleared > state.rankedBest) {
+          state.rankedBest = state.tilesCleared;
+          state.isNewRecord = true;
+        }
+      } else if (!state.autoPlay && state.tilesCleared > state.bestScore) {
+        state.bestScore = state.tilesCleared;
+        state.isNewRecord = true;
+        try {
+          localStorage.setItem(STORAGE_KEY_BEST, String(state.bestScore));
+        } catch (_) {}
+      }
+
+      // 다음 타일로 피벗 전환 및 공전 행성 교대
+      nextTile.passed = true;
+      nextTile.judgment = judgment;
+      state.currentIndex++;
+      state.pivotPlanet = state.pivotPlanet === "fire" ? "ice" : "fire";
+      state.travelAngle = isAuto ? Math.max(0, overshootRad) : 0;
+
+      // 착지 이펙트 및 사운드
+      const wx = nextTile.x * TILE_STEP;
+      const wy = nextTile.y * TILE_STEP;
+      spawnHitParticles(wx, wy, color, nextTile.type);
+      spawnFloatingLabel(wx, wy - 28, label, color);
+      audio.playTileHit(judgment, nextTile.type, state.tilesCleared);
+      state.beatPulse = 1.0;
+
+      // 특수 타일 효과 적용
+      if (nextTile.type === "reverse") {
+        state.orbitDir *= -1;
+        spawnFloatingLabel(wx, wy - 54, "역회전! 🌀", "#c084fc");
+      } else if (nextTile.type === "speedup") {
+        state.speedFactor = Math.min(1.26, state.speedFactor * 1.18);
+        state.speedHoldTiles = 7;
+        spawnFloatingLabel(wx, wy - 54, "가속! 🐇", "#fb923c");
+      } else if (nextTile.type === "slowdown") {
+        state.speedFactor = Math.max(0.78, state.speedFactor * 0.82);
+        state.speedHoldTiles = 6;
+        spawnFloatingLabel(wx, wy - 54, "감속! 🐌", "#38bdf8");
+      } else {
+        if (state.speedHoldTiles > 0) {
+          state.speedHoldTiles--;
+        } else {
+          state.speedFactor += (1.0 - state.speedFactor) * 0.08;
+        }
+      }
+
+      // 단계별 점진 BPM 상승
+      state.baseBPM = computeBaseBpmForTiles(state.tilesCleared);
+      state.currentBPM = Math.round(
+        Math.min(285, Math.max(82, state.baseBPM * state.speedFactor))
+      );
+      if (state.currentBPM > state.maxBpmReached) {
+        state.maxBpmReached = state.currentBPM;
+      }
+
+      // 난이도 레벨업 체크
+      const newTier = getTierForTiles(state.tilesCleared);
+      if (newTier.level > state.currentTierLevel) {
+        state.currentTierLevel = newTier.level;
+        state.bgTint = newTier.bgTint;
+        showMilestoneBanner(newTier);
+        audio.playLevelUp();
+      }
+
+      recomputeTargetZoom();
+      ensureUpcomingTiles(MIN_AHEAD_TILES);
+      updateHUD();
+    }
+
+    function triggerCrash(reason) {
+      if (state.phase === "gameover") return;
+      state.phase = "gameover";
+      state.failReason = reason;
+      state.shakeTimer = 0.42;
+      state.shakeMag = 13;
+
+      audio.playCrash();
+      if (state.mode === "ranked") submitRankedScore();
+
+      const { firePos, icePos } = getPlanetPositions();
+      spawnCrashParticles(firePos.x, firePos.y, ["#ff5e3a", "#ff9f1c", "#ffffff"]);
+      spawnCrashParticles(icePos.x, icePos.y, ["#38bdf8", "#22d3ee", "#ffffff"]);
+
+      setTimeout(() => {
+        if (state.phase === "gameover") {
+          showGameOverModal();
+        }
+      }, 620);
+    }
+
+    // --------------------------------------------------------------------------
+    // 10. 파티클 & 잔상 효과 생성기
+    // --------------------------------------------------------------------------
+    function spawnHitParticles(x, y, color, tileType) {
+      state.ripples.push({
+        x,
+        y,
+        r: 14,
+        maxR: tileType === "normal" ? 54 : 76,
+        alpha: 0.9,
+        color
+      });
+
+      const count = tileType === "normal" ? 10 : 18;
+      for (let i = 0; i < count; i++) {
+        const ang = (Math.PI * 2 * i) / count + Math.random() * 0.35;
+        const spd = 65 + Math.random() * 145;
+        state.particles.push({
+          x,
+          y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          r: Math.random() * 3.4 + 1.8,
+          alpha: 1,
+          decay: 2.3 + Math.random() * 0.9,
+          color
+        });
+      }
+    }
+
+    function spawnCrashParticles(x, y, palette) {
+      for (let i = 0; i < 34; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 85 + Math.random() * 270;
+        state.particles.push({
+          x,
+          y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd - 45,
+          gravity: 250,
+          r: Math.random() * 4.8 + 2.2,
+          alpha: 1,
+          decay: 1.15 + Math.random() * 0.65,
+          color: palette[i % palette.length]
+        });
+      }
+    }
+
+    function spawnFloatingLabel(x, y, text, color) {
+      state.floatTexts.push({
+        x,
+        y,
+        vy: -44,
+        text,
+        color,
+        alpha: 1,
+        scale: 1.24
+      });
+    }
+
+    // --------------------------------------------------------------------------
+    // 11. 매 프레임 물리 & 렌더링 루프
+    // --------------------------------------------------------------------------
+    function getPlanetPositions() {
+      const pivotTile = getCurrentTile();
+      const px = pivotTile.x * TILE_STEP;
+      const py = pivotTile.y * TILE_STEP;
+
+      const worldOrbitAngle = pivotTile.inAngle + state.orbitDir * state.travelAngle;
+      const ox = px + Math.cos(worldOrbitAngle) * TILE_STEP;
+      const oy = py + Math.sin(worldOrbitAngle) * TILE_STEP;
+
+      return {
+        pivotPos: { x: px, y: py },
+        orbitPos: { x: ox, y: oy },
+        firePos: state.pivotPlanet === "fire" ? { x: px, y: py } : { x: ox, y: oy },
+        icePos: state.pivotPlanet === "ice" ? { x: px, y: py } : { x: ox, y: oy },
+        worldOrbitAngle
+      };
+    }
+
+    function update(dt) {
+      for (const s of state.stars) {
+        s.phase += s.twinkleSpeed * dt;
+      }
+
+      state.beatPulse = Math.max(0, state.beatPulse - dt * 4.6);
+      if (state.shakeTimer > 0) {
+        state.shakeTimer = Math.max(0, state.shakeTimer - dt);
+      }
+
+      const omega = (state.currentBPM / 60) * Math.PI;
+
+      // 1) 시작 대기 화면: 0번 타일 주위를 부드럽게 공전
+      if (state.phase === "start") {
+        state.travelAngle += omega * 0.55 * dt;
+        recordTrails();
+      }
+
+      // 2) 4박자 카운트다운 (-3π -> +π)
+      if (state.phase === "countdown") {
+        state.travelAngle += omega * dt;
+
+        if (state.travelAngle >= -2 * Math.PI && state.lastCountdownCue < 2) {
+          state.lastCountdownCue = 2;
+          state.beatPulse = 0.85;
+          audio.playCountdownBeat(2);
+        }
+        if (state.travelAngle >= -1 * Math.PI && state.lastCountdownCue < 3) {
+          state.lastCountdownCue = 3;
+          state.beatPulse = 0.85;
+          audio.playCountdownBeat(3);
+        }
+        if (state.travelAngle >= 0 && state.lastCountdownCue < 4) {
+          state.lastCountdownCue = 4;
+          state.beatPulse = 0.95;
+          audio.playCountdownBeat(4);
+          state.phase = "playing";
+        }
+
+        recordTrails();
+      }
+
+      // 3) 본 게임 진행 중
+      if (state.phase === "playing") {
+        state.travelAngle += omega * dt;
+        const targetTravel = getTargetTravelForCurrent();
+        const hitWindow = getHitWindowRad(omega);
+
+        recordTrails();
+
+        if (state.autoPlay && state.mode !== "ranked") {
+          if (state.travelAngle >= targetTravel) {
+            const overshoot = state.travelAngle - targetTravel;
+            commitTileHit(true, overshoot);
+          }
+        } else {
+          if (state.travelAngle > targetTravel + hitWindow) {
+            triggerCrash("너무 늦었어요!");
+          }
+        }
+      }
+
+      // 부드러운 스프링 카메라 추적
+      const curr = getCurrentTile();
+      const next = state.tiles[Math.min(state.currentIndex + 1, state.tiles.length - 1)];
+      const next2 = state.tiles[Math.min(state.currentIndex + 2, state.tiles.length - 1)];
+      const focusX = (curr.x * 0.56 + next.x * 0.28 + next2.x * 0.16) * TILE_STEP;
+      const focusY = (curr.y * 0.56 + next.y * 0.28 + next2.y * 0.16) * TILE_STEP;
+
+      const camLerp = 1 - Math.exp(-9.0 * dt);
+      state.camX += (focusX - state.camX) * camLerp;
+      state.camY += (focusY - state.camY) * camLerp;
+      state.camZoom += (state.targetZoom - state.camZoom) * (1 - Math.exp(-5.5 * dt));
+
+      updateParticles(dt);
+    }
+
+    function recordTrails() {
+      const { firePos, icePos } = getPlanetPositions();
+      state.fireTrail.push({ x: firePos.x, y: firePos.y, alpha: 0.88 });
+      state.iceTrail.push({ x: icePos.x, y: icePos.y, alpha: 0.88 });
+
+      if (state.fireTrail.length > 26) state.fireTrail.shift();
+      if (state.iceTrail.length > 26) state.iceTrail.shift();
+    }
+
+    function updateParticles(dt) {
+      for (let i = state.fireTrail.length - 1; i >= 0; i--) {
+        state.fireTrail[i].alpha -= dt * 2.7;
+        if (state.fireTrail[i].alpha <= 0) state.fireTrail.splice(i, 1);
+      }
+      for (let i = state.iceTrail.length - 1; i >= 0; i--) {
+        state.iceTrail[i].alpha -= dt * 2.7;
+        if (state.iceTrail[i].alpha <= 0) state.iceTrail.splice(i, 1);
+      }
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const p = state.particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        if (p.gravity) p.vy += p.gravity * dt;
+        p.alpha -= p.decay * dt;
+        if (p.alpha <= 0) state.particles.splice(i, 1);
+      }
+      for (let i = state.ripples.length - 1; i >= 0; i--) {
+        const r = state.ripples[i];
+        r.r += (r.maxR - r.r) * Math.min(1, dt * 11);
+        r.alpha -= dt * 2.5;
+        if (r.alpha <= 0) state.ripples.splice(i, 1);
+      }
+      for (let i = state.floatTexts.length - 1; i >= 0; i--) {
+        const ft = state.floatTexts[i];
+        ft.y += ft.vy * dt;
+        ft.scale += (1 - ft.scale) * Math.min(1, dt * 15);
+        ft.alpha -= dt * 1.55;
+        if (ft.alpha <= 0) state.floatTexts.splice(i, 1);
+      }
+    }
+
+    function render() {
+      // 1) 비트 반응형 우주 배경 그라데이션
+      const radGrad = ctx.createRadialGradient(
+        viewW * 0.5,
+        viewH * 0.5,
+        30,
+        viewW * 0.5,
+        viewH * 0.5,
+        Math.max(viewW, viewH) * 0.8
+      );
+      radGrad.addColorStop(0, state.bgTint);
+      radGrad.addColorStop(0.6, "#090d16");
+      radGrad.addColorStop(1, "#04060b");
+      ctx.fillStyle = radGrad;
+      ctx.fillRect(0, 0, viewW, viewH);
+
+      // 2) 시차 별빛
+      for (const s of state.stars) {
+        const sx = ((s.x - state.camX * s.parallax) % viewW + viewW) % viewW;
+        const sy = ((s.y - state.camY * s.parallax) % viewH + viewH) % viewH;
+        const alpha = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(s.phase));
+        ctx.fillStyle = `rgba(226, 232, 240, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(sx, sy, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 3) 월드 좌표 변환
+      ctx.save();
+      let shakeX = 0;
+      let shakeY = 0;
+      if (state.shakeTimer > 0) {
+        shakeX = (Math.random() - 0.5) * 2 * state.shakeMag;
+        shakeY = (Math.random() - 0.5) * 2 * state.shakeMag;
+      }
+
+      const zoom = state.camZoom * (1 + state.beatPulse * 0.025);
+      ctx.translate(viewW * 0.5 + shakeX, viewH * 0.5 + shakeY);
+      ctx.scale(zoom, zoom);
+      ctx.translate(-state.camX, -state.camY);
+
+      drawWorldGrid();
+      drawTrackConnectors();
+      drawTiles();
+
+      if (state.phase !== "gameover") {
+        drawOrbitGuide();
+      }
+
+      for (const r of state.ripples) {
+        ctx.save();
+        ctx.strokeStyle = r.color;
+        ctx.globalAlpha = Math.max(0, r.alpha);
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      drawRibbonTrail(state.fireTrail, "#ff5e3a");
+      drawRibbonTrail(state.iceTrail, "#38bdf8");
+
+      if (state.phase !== "gameover") {
+        drawPlanets();
+      }
+
+      for (const p of state.particles) {
+        ctx.save();
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      for (const ft of state.floatTexts) {
+        ctx.save();
+        ctx.translate(ft.x, ft.y);
+        ctx.scale(ft.scale, ft.scale);
+        ctx.globalAlpha = Math.max(0, ft.alpha);
+        ctx.font = "900 18px 'Noto Sans KR', sans-serif";
+        ctx.textAlign = "center";
+        ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = ft.color;
+        ctx.fillText(ft.text, 0, 0);
+        ctx.restore();
+      }
+
+      ctx.restore();
+
+      // 4) 카운트다운 대형 중앙 텍스트 ("1", "2", "3", "4")
+      if (state.phase === "countdown" || (state.phase === "playing" && state.tilesCleared === 0 && state.travelAngle < Math.PI * 0.65)) {
+        drawCountdownText();
+      }
+    }
+
+    function drawWorldGrid() {
+      const gridStep = TILE_STEP * 2;
+      const halfW = (viewW / state.camZoom) * 0.65;
+      const halfH = (viewH / state.camZoom) * 0.65;
+      const startX = Math.floor((state.camX - halfW) / gridStep) * gridStep;
+      const endX = Math.ceil((state.camX + halfW) / gridStep) * gridStep;
+      const startY = Math.floor((state.camY - halfH) / gridStep) * gridStep;
+      const endY = Math.ceil((state.camY + halfH) / gridStep) * gridStep;
+
+      ctx.save();
+      ctx.strokeStyle = `rgba(148, 163, 184, ${0.035 + state.beatPulse * 0.025})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let x = startX; x <= endX; x += gridStep) {
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, endY);
+      }
+      for (let y = startY; y <= endY; y += gridStep) {
+        ctx.moveTo(startX, y);
+        ctx.lineTo(endX, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawTrackConnectors() {
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      for (let i = 0; i < state.tiles.length - 1; i++) {
+        const t1 = state.tiles[i];
+        const t2 = state.tiles[i + 1];
+        const x1 = t1.x * TILE_STEP;
+        const y1 = t1.y * TILE_STEP;
+        const x2 = t2.x * TILE_STEP;
+        const y2 = t2.y * TILE_STEP;
+
+        ctx.strokeStyle = t2.passed
+          ? "rgba(56, 189, 248, 0.25)"
+          : "rgba(148, 163, 184, 0.20)";
+        ctx.lineWidth = 34;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        ctx.strokeStyle = "rgba(13, 18, 33, 0.92)";
+        ctx.lineWidth = 27;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawTiles() {
+      const half = 21;
+      const nextTargetIdx = state.currentIndex + 1;
+
+      for (let i = 0; i < state.tiles.length; i++) {
+        const t = state.tiles[i];
+        const cx = t.x * TILE_STEP;
+        const cy = t.y * TILE_STEP;
+        const isNextTarget = i === nextTargetIdx && (state.phase === "playing" || state.phase === "countdown");
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(t.outAngle);
+
+        let border = "rgba(148, 163, 184, 0.55)";
+        let fill = "rgba(15, 23, 42, 0.95)";
+
+        if (t.type === "reverse") {
+          border = "#c084fc";
+          fill = "rgba(59, 7, 100, 0.92)";
+        } else if (t.type === "speedup") {
+          border = "#fb923c";
+          fill = "rgba(67, 20, 7, 0.92)";
+        } else if (t.type === "slowdown") {
+          border = "#38bdf8";
+          fill = "rgba(8, 47, 73, 0.92)";
+        } else if (t.passed) {
+          border = "rgba(56, 189, 248, 0.65)";
+        }
+
+        // 다음 목표 타일 강조 맥동 링
+        if (isNextTarget) {
+          const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.014);
+          ctx.strokeStyle = `rgba(251, 191, 36, ${0.45 + pulse * 0.45})`;
+          ctx.lineWidth = 3.5;
+          drawRoundedBox(ctx, -half - 5, -half - 5, (half + 5) * 2, (half + 5) * 2, 13);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = border;
+        ctx.lineWidth = 2.5;
+        drawRoundedBox(ctx, -half, -half, half * 2, half * 2, 10);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.rotate(-t.outAngle);
+        drawTileSymbol(t.type);
+
+        ctx.restore();
+      }
+    }
+
+    function drawTileSymbol(type) {
+      if (type === "normal") {
+        ctx.fillStyle = "rgba(226, 232, 240, 0.35)";
+        ctx.beginPath();
+        ctx.arc(0, 0, 3.8, 0, Math.PI * 2);
+        ctx.fill();
+        return;
+      }
+
+      if (type === "reverse") {
+        ctx.strokeStyle = "#e9d5ff";
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.arc(0, 0, 8.5, 0.25, Math.PI * 1.65);
+        ctx.stroke();
+
+        ctx.fillStyle = "#e9d5ff";
+        ctx.beginPath();
+        ctx.moveTo(5.5, -8.5);
+        ctx.lineTo(10.5, -3.5);
+        ctx.lineTo(3.8, -2.8);
+        ctx.closePath();
+        ctx.fill();
+      } else if (type === "speedup") {
+        ctx.strokeStyle = "#fed7aa";
+        ctx.lineWidth = 2.6;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        ctx.moveTo(-7, -6.5);
+        ctx.lineTo(-0.5, 0);
+        ctx.lineTo(-7, 6.5);
+        ctx.moveTo(1, -6.5);
+        ctx.lineTo(7.5, 0);
+        ctx.lineTo(1, 6.5);
+        ctx.stroke();
+      } else if (type === "slowdown") {
+        ctx.strokeStyle = "#bae6fd";
+        ctx.lineWidth = 2.3;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        for (let a = 0; a < Math.PI * 3.1; a += 0.25) {
+          const r = a * 1.05;
+          const x = Math.cos(a) * r;
+          const y = Math.sin(a) * r;
+          if (a === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+    }
+
+    function drawOrbitGuide() {
+      const curr = getCurrentTile();
+      const px = curr.x * TILE_STEP;
+      const py = curr.y * TILE_STEP;
+      const omega = (state.currentBPM / 60) * Math.PI;
+      const perfectRad = getHitWindowRad(omega) * 0.34;
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 6]);
+      ctx.beginPath();
+      ctx.arc(px, py, TILE_STEP, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 목표 타일 진입 완벽 판정 아크 표시
+      ctx.strokeStyle = "rgba(52, 211, 153, 0.72)";
+      ctx.lineWidth = 4.5;
+      ctx.beginPath();
+      ctx.arc(px, py, TILE_STEP, curr.outAngle - perfectRad, curr.outAngle + perfectRad);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawRibbonTrail(trail, color) {
+      if (trail.length < 2) return;
+      ctx.save();
+      ctx.lineCap = "round";
+      for (let i = 1; i < trail.length; i++) {
+        const p0 = trail[i - 1];
+        const p1 = trail[i];
+        const ratio = i / trail.length;
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = Math.max(0, p1.alpha * ratio * 0.52);
+        ctx.lineWidth = PLANET_RADIUS * 1.32 * ratio;
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawPlanets() {
+      const { firePos, icePos } = getPlanetPositions();
+
+      ctx.save();
+      const linkGrad = ctx.createLinearGradient(firePos.x, firePos.y, icePos.x, icePos.y);
+      linkGrad.addColorStop(0, "rgba(255, 94, 58, 0.45)");
+      linkGrad.addColorStop(1, "rgba(56, 189, 248, 0.45)");
+      ctx.strokeStyle = linkGrad;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(firePos.x, firePos.y);
+      ctx.lineTo(icePos.x, icePos.y);
+      ctx.stroke();
+      ctx.restore();
+
+      drawPlanetSphere(firePos.x, firePos.y, "#ea3815", "#ff5e3a", "#fff7ed");
+      drawPlanetSphere(icePos.x, icePos.y, "#0284c7", "#38bdf8", "#f0f9ff");
+    }
+
+    function drawPlanetSphere(x, y, outerCol, midCol, coreCol) {
+      ctx.save();
+      const glow = ctx.createRadialGradient(x, y, PLANET_RADIUS * 0.25, x, y, PLANET_RADIUS * 2.25);
+      glow.addColorStop(0, midCol);
+      glow.addColorStop(0.5, outerCol + "66");
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, PLANET_RADIUS * 2.25, 0, Math.PI * 2);
+      ctx.fill();
+
+      const body = ctx.createRadialGradient(x - 4, y - 4, 2, x, y, PLANET_RADIUS);
+      body.addColorStop(0, coreCol);
+      body.addColorStop(0.45, midCol);
+      body.addColorStop(1, outerCol);
+      ctx.fillStyle = body;
+      ctx.beginPath();
+      ctx.arc(x, y, PLANET_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawCountdownText() {
+      let label = "4!";
+      let color = "#34d399";
+      let beatFrac = 0;
+
+      if (state.travelAngle < -2 * Math.PI) {
+        label = "1";
+        color = "#fbbf24";
+        beatFrac = (state.travelAngle + 3 * Math.PI) / Math.PI;
+      } else if (state.travelAngle < -1 * Math.PI) {
+        label = "2";
+        color = "#fbbf24";
+        beatFrac = (state.travelAngle + 2 * Math.PI) / Math.PI;
+      } else if (state.travelAngle < 0) {
+        label = "3";
+        color = "#fb923c";
+        beatFrac = (state.travelAngle + Math.PI) / Math.PI;
+      } else {
+        label = "4!";
+        color = "#34d399";
+        beatFrac = state.travelAngle / Math.PI;
+      }
+
+      const popScale = 1 + Math.max(0, 1 - beatFrac) * 0.32;
+
+      ctx.save();
+      ctx.translate(viewW * 0.5, viewH * 0.25);
+      ctx.scale(popScale, popScale);
+      ctx.font = "900 48px 'Noto Sans KR', 'Inter', sans-serif";
+      ctx.textAlign = "center";
+      ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = color;
+      ctx.fillText(label, 0, 0);
+      ctx.restore();
+    }
+
+    function drawRoundedBox(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    // --------------------------------------------------------------------------
+    // 12. 입력 이벤트 바인딩
+    // --------------------------------------------------------------------------
+    window.addEventListener("keydown", (e) => {
+      if (e.repeat) return;
+      if (!rankModal.hidden) { if (e.code === "Escape") rankModal.hidden = true; return; }
+
+      if (e.code === "KeyR") {
+        e.preventDefault();
+        initRun(true);
+        return;
+      }
+
+      if (e.ctrlKey || e.altKey || e.metaKey || e.key.startsWith("F")) {
+        return;
+      }
+
+      if (e.code === "Space" || e.code === "Enter" || e.code.startsWith("Arrow")) {
+        e.preventDefault();
+      }
+
+      handleUserTap();
+    });
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+      handleUserTap();
+    });
+
+    btnStartRetry.addEventListener("click", (e) => {
+      e.stopPropagation();
+      btnStartRetry.blur();
+      initRun(true);
+    });
+
+    btnRestart.addEventListener("click", (e) => {
+      e.stopPropagation();
+      btnRestart.blur();
+      initRun(true);
+    });
+
+    btnAutoPlay.addEventListener("click", (e) => {
+      e.stopPropagation();
+      btnAutoPlay.blur();
+      if (state.mode === "ranked") return;   // 랭킹전에서는 자동 연주 불가
+      state.autoPlay = !state.autoPlay;
+
+      if (state.autoPlay) {
+        btnAutoPlay.classList.add("text-emerald-300", "border-emerald-400/50");
+        autoDot.className = "w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]";
+      } else {
+        btnAutoPlay.classList.remove("text-emerald-300", "border-emerald-400/50");
+        autoDot.className = "w-2 h-2 rounded-full bg-slate-500";
+      }
+    });
+
+    modeEndless.addEventListener("click", (e) => { e.stopPropagation(); modeEndless.blur(); setMode("endless"); });
+    modeRanked.addEventListener("click", (e) => { e.stopPropagation(); modeRanked.blur(); setMode("ranked"); });
+    btnToMenu.addEventListener("click", (e) => { e.stopPropagation(); btnToMenu.blur(); state.phase = "start"; initRun(false); });
+    document.getElementById("btnRanking").addEventListener("click", (e) => { e.stopPropagation(); openLeaderboard(); });
+    document.getElementById("btnModalRanking").addEventListener("click", (e) => { e.stopPropagation(); openLeaderboard(); });
+    document.getElementById("rankClose").addEventListener("click", () => { rankModal.hidden = true; });
+    rankModal.addEventListener("pointerdown", (e) => { if (e.target === rankModal) rankModal.hidden = true; });
+
+    btnMute.addEventListener("click", (e) => {
+      e.stopPropagation();
+      btnMute.blur();
+      const muted = audio.toggleMute();
+      if (muted) {
+        iconAudioOn.classList.add("hidden");
+        iconAudioOff.classList.remove("hidden");
+        muteText.textContent = "음소거";
+      } else {
+        iconAudioOn.classList.remove("hidden");
+        iconAudioOff.classList.add("hidden");
+        muteText.textContent = "소리 켜짐";
+      }
+    });
+
+    // --------------------------------------------------------------------------
+    // 13. 애니메이션 루프 시작
+    // --------------------------------------------------------------------------
+    let prevTime = 0;
+
+    function mainLoop(now) {
+      if (!prevTime) prevTime = now;
+      const dt = Math.min((now - prevTime) / 1000, 0.05);
+      prevTime = now;
+
+      try {
+        update(dt);
+        render();
+      } catch (err) {
+        // 한 프레임의 오류로 게임 루프 전체가 멈춰 검은 화면이 되지 않도록 방어
+        console.error("[얼불춤] 프레임 오류", err);
+        showFatal(err);
+      }
+
+      requestAnimationFrame(mainLoop);
+    }
+
+    let fatalShown = false;
+    function showFatal(err) {
+      if (fatalShown) return;
+      fatalShown = true;
+      const box = document.createElement("div");
+      box.style.cssText = "position:fixed;left:50%;bottom:56px;transform:translateX(-50%);z-index:9998;max-width:92vw;padding:8px 14px;border-radius:12px;background:rgba(127,29,29,.92);color:#fecaca;font:700 12px sans-serif;pointer-events:none";
+      box.textContent = "오류가 발생했어요: " + ((err && err.message) || err) + " (R 키로 다시 시작)";
+      document.body.appendChild(box);
+      setTimeout(() => { box.remove(); fatalShown = false; }, 6000);
+    }
+    window.addEventListener("error", (e) => { try { showFatal(e.error || e.message); } catch (_) {} });
+
+    window.onload = function () {
+      initStars();
+      handleResize();
+      initRun(false);
+      applyModeUI();
+      if (window.OD && OD.user) onAuthChanged(OD.user);
+      requestAnimationFrame(mainLoop);
+    };
+  </script>
+</body>
+</html>
