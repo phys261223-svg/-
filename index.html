@@ -37,18 +37,19 @@
       cursor: pointer;
     }
 
+    #bgLayer {
+      position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background: radial-gradient(circle at 50% 50%, #1b2a4a 0px, #090d16 calc(max(100vw, 100vh) * 0.48), #04060b calc(max(100vw, 100vh) * 0.8));
+    }
+
     .glass-panel {
-      background: rgba(12, 17, 32, 0.84);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: rgba(12, 17, 32, 0.94);
       border: 1px solid rgba(148, 163, 184, 0.2);
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
     }
 
     .glass-pill {
-      background: rgba(14, 21, 38, 0.8);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(14, 21, 38, 0.9);
       border: 1px solid rgba(148, 163, 184, 0.18);
     }
 
@@ -124,13 +125,13 @@
     #modeSelect button.active { border-color: rgba(251,191,36,.7); background: rgba(245,158,11,.16); color: #fde68a; }
     #modeSelect button:disabled { opacity:.5; }
     .auto-locked { opacity:.4; cursor:not-allowed !important; }
-    #rankModal[hidden]{display:none}
+    #rankModal[hidden], #shopModal[hidden], #settingsModal[hidden] { display: none; }
   </style>
 </head>
 <body class="relative w-full h-full">
 
   <!-- 빌드 표시 (최신 파일인지 확인용) + 초기 오류 표시 -->
-  <div id="buildTag" style="position:fixed;right:8px;bottom:6px;z-index:10000;font:600 10px sans-serif;color:#64748b;pointer-events:none">v3 · 로그인/랭킹 (div 수정판)</div>
+  <div id="buildTag" style="position:fixed;right:8px;bottom:6px;z-index:10000;font:600 10px sans-serif;color:#64748b;pointer-events:none">v7 · 스킨 효과(눈/사탕)</div>
   <script>
     window.addEventListener("error", function (e) {
       var b = document.getElementById("buildTag");
@@ -169,6 +170,7 @@
   </div>
 
   <!-- 메인 게임 캔버스 -->
+  <div id="bgLayer"></div>
   <canvas id="gameCanvas"></canvas>
 
   <!-- 상단 HUD 영역 -->
@@ -224,6 +226,8 @@
         <button id="btnLoginOpen" type="button" class="glass-pill btn-interactive px-3 py-2 rounded-2xl text-xs sm:text-sm font-bold text-sky-300 hover:text-white">로그인</button>
         <button id="btnLogout" type="button" class="hidden glass-pill btn-interactive px-3 py-2 rounded-2xl text-xs sm:text-sm font-bold text-slate-300 hover:text-white">로그아웃</button>
 
+        <button id="btnShop" type="button" class="glass-pill btn-interactive px-3 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1.5 text-yellow-300 hover:text-yellow-200" title="상점">🪙 <span id="coinText" class="tabular-nums">0</span><span class="hidden sm:inline text-slate-300 font-semibold">· 상점</span></button>
+
         <!-- 자동 연주 (AUTO) 토글 -->
         <button id="btnAutoPlay" type="button" class="glass-pill btn-interactive px-3 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1.5 text-slate-300 hover:text-white" title="자동 연주 (최고 기록 저장 비활성화)">
           <span id="autoDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
@@ -241,6 +245,8 @@
           <span id="muteText" class="hidden sm:inline">소리 켜짐</span>
         </button>
 
+        <button id="btnSettings" type="button" class="glass-pill btn-interactive px-3 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1.5 text-slate-200 hover:text-white" title="설정 (입력 지연 보정)">⚙ <span class="hidden sm:inline">설정</span></button>
+
         <!-- 다시 시작 (R) 버튼 -->
         <button id="btnRestart" type="button" class="glass-pill btn-interactive px-3 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-1.5 text-slate-200 hover:text-white" title="다시 시작 (R)">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -256,11 +262,13 @@
   <div id="milestoneContainer" class="fixed top-20 left-1/2 z-20 pointer-events-none"></div>
 
   <!-- 시작 / 게임 오버 모달 오버레이 -->
-  <div id="modalOverlay" class="fixed inset-0 z-30 flex items-center justify-center p-4 bg-[#060911]/70 backdrop-blur-sm">
-    <div class="glass-panel max-w-md w-full rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden">
+  <div id="modalOverlay" class="fixed inset-0 z-30 flex items-center justify-center p-4 bg-[#060911]/80">
+    <div class="glass-panel max-w-md w-full rounded-3xl p-6 sm:p-8 text-center relative overflow-y-auto max-h-[96vh]">
       <!-- 배경 네온 글로우 -->
-      <div class="absolute -top-24 -left-24 w-48 h-48 rounded-full bg-[#ff5e3a]/20 blur-3xl pointer-events-none"></div>
-      <div class="absolute -bottom-24 -right-24 w-48 h-48 rounded-full bg-[#38bdf8]/20 blur-3xl pointer-events-none"></div>
+      <div class="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+        <div class="absolute -top-24 -left-24 w-48 h-48 rounded-full bg-[#ff5e3a]/20 blur-3xl"></div>
+        <div class="absolute -bottom-24 -right-24 w-48 h-48 rounded-full bg-[#38bdf8]/20 blur-3xl"></div>
+      </div>
 
       <!-- 상단 배지 -->
       <div id="modalBadge" class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold bg-white/10 text-amber-300 border border-white/15 mb-3">
@@ -344,6 +352,7 @@
         </div>
 
         <div id="rankSaveStatus" class="hidden mb-3 py-1.5 px-3 rounded-xl bg-slate-800/70 text-center text-xs font-bold text-slate-300"></div>
+        <div id="coinGain" class="hidden mb-3 py-2 px-3 rounded-xl bg-yellow-500/10 border border-yellow-400/30 text-center text-xs font-bold text-yellow-200"></div>
         <div class="grid grid-cols-2 gap-2 text-center text-xs">
           <div class="bg-emerald-500/10 border border-emerald-500/25 rounded-xl py-1.5">
             <span class="text-emerald-300 font-bold">완벽 / 정확 </span>
@@ -354,6 +363,15 @@
             <span id="statGood" class="font-black text-white ml-1">0</span>
           </div>
         </div>
+      </div>
+
+      <!-- 스킨 선택 (시작 화면 / 게임오버 화면 공통) -->
+      <div id="skinPicker" class="mb-4 text-left relative">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-xs font-bold text-slate-300">🎨 스킨</span>
+          <button id="skinShopLink" type="button" class="text-[11px] font-bold text-yellow-300 hover:text-yellow-200">🛒 상점에서 더 보기 ›</button>
+        </div>
+        <div id="skinPickerRow" class="flex gap-2 overflow-x-auto pb-1"></div>
       </div>
 
       <!-- 시작 / 재도전 버튼 -->
@@ -368,7 +386,7 @@
   </div>
 
   <!-- 랭킹 모달 -->
-  <div id="rankModal" hidden class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-[#060911]/80 backdrop-blur-sm">
+  <div id="rankModal" hidden class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-[#060911]/85">
     <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 relative">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg font-black text-white">🏆 랭킹전 TOP 30</h2>
@@ -377,6 +395,66 @@
       <div id="rankMe" class="hidden mb-3 py-1.5 px-3 rounded-xl bg-emerald-500/10 border border-emerald-400/30 text-xs font-bold text-emerald-300"></div>
       <div id="rankList" class="max-h-[55vh] overflow-y-auto space-y-1.5 pr-1 text-sm"></div>
       <p class="mt-3 text-[11px] text-slate-500">점수 = 통과한 타일 수 · 자동 연주 기록은 등록되지 않아요.</p>
+    </div>
+  </div>
+
+  <!-- 설정 모달 (입력 지연 보정) -->
+  <div id="settingsModal" hidden class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-[#060911]/85">
+    <div class="glass-panel max-w-md w-full rounded-3xl p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-black text-white">⚙ 설정</h2>
+        <button id="settingsClose" type="button" class="btn-interactive px-3 py-1.5 rounded-xl text-sm font-bold text-slate-300 bg-slate-800/80 border border-slate-600/60">닫기</button>
+      </div>
+
+      <section>
+        <h3 class="font-bold text-white text-sm">입력 지연 보정</h3>
+        <p class="text-xs text-slate-400 mt-1 leading-relaxed">"너무 늦었어요"가 억울하게 자주 뜨면 <b class="text-amber-300">+</b> 쪽으로, "너무 빨랐어요"가 자주 뜨면 <b class="text-amber-300">−</b> 쪽으로 옮겨 주세요. 블루투스 이어폰은 보통 +100ms 이상이 필요해요. 이 값은 이 기기에만 저장돼요.</p>
+        <div class="mt-3 flex items-center gap-3">
+          <input id="offsetRange" type="range" min="-200" max="200" step="5" value="0" class="flex-1 accent-amber-400" />
+          <span id="offsetValue" class="w-20 text-right font-black text-amber-300 tabular-nums">0ms</span>
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button id="offsetMinus" type="button" class="btn-interactive px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 bg-slate-800/80 border border-slate-600/60">−5</button>
+          <button id="offsetPlus" type="button" class="btn-interactive px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 bg-slate-800/80 border border-slate-600/60">+5</button>
+          <button id="offsetReset" type="button" class="btn-interactive px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 bg-slate-800/80 border border-slate-600/60 ml-auto">초기화</button>
+        </div>
+      </section>
+
+      <section class="mt-5 border-t border-slate-700/60 pt-4">
+        <h3 class="font-bold text-white text-sm">자동 보정</h3>
+        <p class="text-xs text-slate-400 mt-1 leading-relaxed">소리가 들릴 때마다 <b class="text-slate-200">Space</b>(또는 아래 영역 터치)를 눌러 주세요. 박자 12번을 재서 알맞은 값을 찾아줘요. 소리가 켜져 있어야 해요.</p>
+        <button id="calibStart" type="button" class="btn-interactive mt-3 w-full py-2.5 rounded-2xl text-sm font-bold text-amber-300 bg-slate-800/80 border border-amber-400/30">자동 보정 시작</button>
+        <div id="calibArea" class="hidden mt-3">
+          <div id="calibPad" class="select-none cursor-pointer rounded-2xl border border-slate-600/60 bg-slate-900/80 h-28 flex flex-col items-center justify-center">
+            <div id="calibDot" class="w-10 h-10 rounded-full bg-amber-400/40 border-2 border-amber-300"></div>
+            <div id="calibMsg" class="mt-2 text-xs font-bold text-slate-300">준비 중...</div>
+          </div>
+          <div id="calibResult" class="hidden mt-3 rounded-2xl bg-slate-900/80 border border-slate-700/60 p-3 text-center">
+            <div id="calibResultText" class="text-sm font-bold text-slate-200"></div>
+            <div class="flex gap-2 mt-2.5">
+              <button id="calibApply" type="button" class="btn-interactive flex-1 py-2 rounded-xl text-sm font-bold text-emerald-300 bg-slate-800/80 border border-emerald-400/30">적용</button>
+              <button id="calibRetry" type="button" class="btn-interactive flex-1 py-2 rounded-xl text-sm font-bold text-slate-200 bg-slate-800/80 border border-slate-600/60">다시 측정</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- 상점 모달 -->
+  <div id="shopModal" hidden class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-[#060911]/85">
+    <div class="glass-panel max-w-lg w-full rounded-3xl p-5 sm:p-6 max-h-[92vh] flex flex-col">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-lg font-black text-white">🛒 상점</h2>
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1.5 rounded-xl bg-yellow-500/10 border border-yellow-400/30 text-yellow-200 font-black text-sm">🪙 <span id="shopCoins" class="tabular-nums">0</span></span>
+          <button id="shopClose" type="button" class="btn-interactive px-3 py-1.5 rounded-xl text-sm font-bold text-slate-300 bg-slate-800/80 border border-slate-600/60">닫기</button>
+        </div>
+      </div>
+      <div id="shopWalletNote" class="text-[11px] text-slate-400 mb-3"></div>
+      <div id="shopTabs" class="flex gap-2 mb-3"></div>
+      <div id="shopGrid" class="grid grid-cols-2 gap-2.5 overflow-y-auto pr-1 min-h-[120px]"></div>
+      <div id="shopRules" class="mt-3 text-[11px] text-slate-500 leading-relaxed"></div>
     </div>
   </div>
 
@@ -747,6 +825,22 @@ window.OD_FIREBASE_CONFIG = {
         return this.muted;
       }
 
+      // 보정용 메트로놈 틱 (오디오 시계로 정확히 예약)
+      scheduleTick(when, accent) {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(accent ? 1500 : 1100, when);
+        g.gain.setValueAtTime(0.0001, when);
+        g.gain.exponentialRampToValueAtTime(0.5, when + 0.003);
+        g.gain.exponentialRampToValueAtTime(0.001, when + 0.06);
+        osc.connect(g);
+        g.connect(this.master);
+        osc.start(when);
+        osc.stop(when + 0.07);
+      }
+
       // 4박자 카운트다운 메트로놈 클릭음
       playCountdownBeat(beatNumber) {
         if (this.muted) return;
@@ -972,6 +1066,9 @@ window.OD_FIREBASE_CONFIG = {
       rankedBest: 0,
       rankStatus: "",
       rankSubmitted: false,
+      coinsAwarded: false,
+      coinText: "",
+      autoUsed: false,
 
       // 트랙 배열 (무한 생성 및 지나간 타일 정리)
       tiles: [],
@@ -1591,6 +1688,7 @@ window.OD_FIREBASE_CONFIG = {
     }
 
     async function openLeaderboard() {
+      if (isGameActive()) { toast("게임 중에는 열 수 없어요. R로 재시작한 뒤 이용해 주세요."); return; }
       rankModal.hidden = false;
       rankMe.classList.add("hidden");
       rankList.innerHTML = '<div class="text-center text-slate-400 py-8">불러오는 중...</div>';
@@ -1634,7 +1732,9 @@ window.OD_FIREBASE_CONFIG = {
         btnLogout.classList.remove("hidden");
         btnLoginOpen.classList.add("hidden");
         loadMyRankedBest();
+        walletOnAuth(u);
       } else {
+        walletOnAuth(null);
         userChip.classList.add("hidden"); userChip.classList.remove("inline-flex");
         btnLogout.classList.add("hidden");
         btnLoginOpen.classList.remove("hidden");
@@ -1649,20 +1749,600 @@ window.OD_FIREBASE_CONFIG = {
     }
     window.addEventListener("od-auth", (e) => onAuthChanged(e.detail));
 
+    // --------------------------------------------------------------------------
+    // 7-C. 입력 지연 보정 / 코인 지갑 / 상점
+    // --------------------------------------------------------------------------
+    const $id = (i) => document.getElementById(i);
+
+    // ===== 조정 가능한 설정값 =====
+    const COIN_PER_TILE = 1;                  // 점수(통과한 타일) 1점당 코인
+    const RANK_BONUS = [500, 300, 150];       // 랭킹전 점수가 1·2·3위 점수에 해당할 때 추가 코인
+    const RANK_BONUS_MIN_SCORE = 20;          // 보너스를 받으려면 필요한 최소 점수
+    const MAX_COIN_WRITE = 5000;              // 서버에 한 번에 더할 수 있는 코인 상한 (규칙과 동일하게)
+    // ==============================
+
+    const USERS_PATH = "adofai_users";
+    const GUEST_WALLET_KEY = "adofai_wallet_guest_v1";
+    const PENDING_PREFIX = "adofai_coins_pending_v1_";
+    const OFFSET_KEY = "adofai_input_offset_ms_v1";
+
+    function lsGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (_) {} }
+    function lsDel(k) { try { localStorage.removeItem(k); } catch (_) {} }
+
+    function isGameActive() { return state.phase === "countdown" || state.phase === "playing"; }
+
+    function toast(msg) {
+      const box = document.createElement("div");
+      box.style.cssText = "position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:10001;max-width:92vw;padding:9px 16px;border-radius:14px;background:rgba(15,23,42,.96);border:1px solid rgba(148,163,184,.35);color:#e2e8f0;font:700 13px sans-serif;pointer-events:none;text-align:center";
+      box.textContent = msg;
+      document.body.appendChild(box);
+      setTimeout(() => box.remove(), 2400);
+    }
+
+    // ---------------- 입력 지연 보정 ----------------
+    let inputOffsetMs = 0;
+    try { inputOffsetMs = Math.max(-200, Math.min(200, parseInt(lsGet(OFFSET_KEY) || "0", 10) || 0)); } catch (_) {}
+
+    // 양수(+): 입력이 늦게 들어오는 기기 → 판정 시점을 그만큼 앞당겨 계산
+    function effTravelAngle(omega) {
+      return state.travelAngle - omega * (inputOffsetMs / 1000);
+    }
+
+    const settingsModal = $id("settingsModal");
+    const offsetRange = $id("offsetRange");
+    const offsetValue = $id("offsetValue");
+    const calibStart = $id("calibStart");
+    const calibArea = $id("calibArea");
+    const calibPad = $id("calibPad");
+    const calibDot = $id("calibDot");
+    const calibMsg = $id("calibMsg");
+    const calibResult = $id("calibResult");
+    const calibResultText = $id("calibResultText");
+
+    function syncOffsetUI() {
+      offsetRange.value = inputOffsetMs;
+      offsetValue.textContent = (inputOffsetMs > 0 ? "+" : "") + inputOffsetMs + "ms";
+    }
+    function setInputOffset(v) {
+      inputOffsetMs = Math.max(-200, Math.min(200, Math.round(Number(v) || 0)));
+      lsSet(OFFSET_KEY, String(inputOffsetMs));
+      syncOffsetUI();
+    }
+
+    const CAL_BEATS = 12;
+    const CAL_INTERVAL = 600;   // ms (100 BPM)
+    const calib = { active: false, beatTimes: [], taps: [], raf: 0, result: null };
+
+    function startCalibration() {
+      audio.unlock();
+      if (audio.muted) { toast("소리가 꺼져 있어요. 소리를 켠 뒤 다시 시도해 주세요."); return; }
+      if (!audio.ctx) { toast("오디오를 사용할 수 없어요."); return; }
+      stopCalibration();
+      calib.active = true;
+      calib.taps = [];
+      calib.result = null;
+      calibResult.classList.add("hidden");
+      calibArea.classList.remove("hidden");
+      calibStart.disabled = true;
+      calibStart.blur();
+
+      const perfNow = performance.now();
+      const ctxNow = audio.ctx.currentTime;
+      const t0 = perfNow + 1300;
+      calib.beatTimes = [];
+      for (let i = 0; i < CAL_BEATS; i++) {
+        const bt = t0 + i * CAL_INTERVAL;
+        calib.beatTimes.push(bt);
+        audio.scheduleTick(ctxNow + (bt - perfNow) / 1000, i % 4 === 0);
+      }
+      calib.raf = requestAnimationFrame(calibLoop);
+    }
+
+    function stopCalibration() {
+      calib.active = false;
+      if (calib.raf) cancelAnimationFrame(calib.raf);
+      calib.raf = 0;
+      calibStart.disabled = false;
+      calibDot.style.transform = "";
+      calibDot.style.opacity = "";
+    }
+
+    function calibLoop() {
+      if (!calib.active) return;
+      const now = performance.now();
+      let flash = 0;
+      for (const bt of calib.beatTimes) {
+        const d = now - bt;
+        if (d >= 0 && d < 140) { flash = 1 - d / 140; break; }
+      }
+      calibDot.style.transform = "scale(" + (1 + flash * 0.5) + ")";
+      calibDot.style.opacity = String(0.55 + flash * 0.45);
+      if (now < calib.beatTimes[0] - 60) {
+        calibMsg.textContent = "곧 시작해요... 소리에 맞춰 눌러 주세요";
+      } else {
+        const n = Math.min(CAL_BEATS, Math.floor((now - calib.beatTimes[0]) / CAL_INTERVAL) + 1);
+        calibMsg.textContent = "소리에 맞춰 누르세요 (" + n + "/" + CAL_BEATS + ")";
+      }
+      if (now > calib.beatTimes[CAL_BEATS - 1] + 700) { finishCalibration(); return; }
+      calib.raf = requestAnimationFrame(calibLoop);
+    }
+
+    function recordCalibTap(ts) {
+      if (!calib.active) return;
+      calib.taps.push(typeof ts === "number" && ts > 0 ? ts : performance.now());
+      calibPad.style.borderColor = "#fbbf24";
+      setTimeout(() => { calibPad.style.borderColor = ""; }, 90);
+    }
+
+    // 탭 시각 − 박자 시각의 중앙값 → 보정값 (양수면 늦게 누르는 기기)
+    function computeCalibrationOffset(beatTimes, taps) {
+      const perBeat = new Map();
+      for (const t of taps) {
+        let best = -1, bd = Infinity;
+        for (let i = 2; i < beatTimes.length; i++) {   // 앞의 두 박자는 적응용이라 제외
+          const d = t - beatTimes[i];
+          if (Math.abs(d) < Math.abs(bd)) { bd = d; best = i; }
+        }
+        if (best < 0 || Math.abs(bd) > 300) continue;
+        if (!perBeat.has(best) || Math.abs(bd) < Math.abs(perBeat.get(best))) perBeat.set(best, bd);
+      }
+      const deltas = [...perBeat.values()].sort((a, b) => a - b);
+      if (deltas.length < 5) return null;
+      const med = deltas[Math.floor(deltas.length / 2)];
+      const kept = deltas.filter((d) => Math.abs(d - med) <= 80);
+      const mean = kept.reduce((s, d) => s + d, 0) / kept.length;
+      return { offset: Math.max(-200, Math.min(200, Math.round(mean / 5) * 5)), used: kept.length, total: deltas.length };
+    }
+
+    function finishCalibration() {
+      stopCalibration();
+      const r = computeCalibrationOffset(calib.beatTimes, calib.taps);
+      calib.result = r;
+      calibResult.classList.remove("hidden");
+      calibMsg.textContent = "측정이 끝났어요";
+      if (!r) {
+        calibResultText.textContent = "측정에 실패했어요. 소리에 맞춰 다시 시도해 주세요.";
+        $id("calibApply").classList.add("hidden");
+      } else {
+        calibResultText.textContent = "측정 결과: " + (r.offset > 0 ? "+" : "") + r.offset + "ms (유효 " + r.used + "박)";
+        $id("calibApply").classList.remove("hidden");
+      }
+    }
+
+    function openSettings() {
+      if (isGameActive()) { toast("게임 중에는 열 수 없어요. R로 재시작한 뒤 이용해 주세요."); return; }
+      calibArea.classList.add("hidden");
+      calibResult.classList.add("hidden");
+      syncOffsetUI();
+      settingsModal.hidden = false;
+    }
+    function closeSettings() { stopCalibration(); settingsModal.hidden = true; }
+
+    $id("btnSettings").addEventListener("click", (e) => { e.stopPropagation(); e.currentTarget.blur(); openSettings(); });
+    $id("settingsClose").addEventListener("click", closeSettings);
+    settingsModal.addEventListener("pointerdown", (e) => { if (e.target === settingsModal) closeSettings(); });
+    offsetRange.addEventListener("input", () => setInputOffset(offsetRange.value));
+    $id("offsetMinus").addEventListener("click", (e) => { e.currentTarget.blur(); setInputOffset(inputOffsetMs - 5); });
+    $id("offsetPlus").addEventListener("click", (e) => { e.currentTarget.blur(); setInputOffset(inputOffsetMs + 5); });
+    $id("offsetReset").addEventListener("click", (e) => { e.currentTarget.blur(); setInputOffset(0); });
+    calibStart.addEventListener("click", startCalibration);
+    $id("calibRetry").addEventListener("click", (e) => { e.currentTarget.blur(); startCalibration(); });
+    $id("calibApply").addEventListener("click", (e) => {
+      e.currentTarget.blur();
+      if (calib.result) { setInputOffset(calib.result.offset); toast("입력 지연 보정 " + (calib.result.offset > 0 ? "+" : "") + calib.result.offset + "ms 적용!"); }
+    });
+    calibPad.addEventListener("pointerdown", (e) => { e.preventDefault(); recordCalibTap(e.timeStamp); });
+    syncOffsetUI();
+
+    // ---------------- 코인 지갑 ----------------
+    const wallet = { coins: 0, owned: {}, equipped: "", cloud: false, unsynced: 0, error: "" };
+    const coinTextEl = $id("coinText");
+    const coinGain = $id("coinGain");
+
+    let walletChain = Promise.resolve();
+    function walletExclusive(fn) {        // 지갑 쓰기를 한 줄로 세워 중복 지급 방지
+      const p = walletChain.then(fn, fn);
+      walletChain = p.catch(() => {});
+      return p;
+    }
+    function walletUid() { const u = getUser(); return u ? u.uid : null; }
+    function displayCoins() { return wallet.coins + (wallet.cloud ? wallet.unsynced : 0); }
+
+    function saveGuestWallet() {
+      lsSet(GUEST_WALLET_KEY, JSON.stringify({ coins: wallet.coins, owned: wallet.owned, equipped: wallet.equipped }));
+    }
+    function loadGuestWallet() {
+      let d = {};
+      try { d = JSON.parse(lsGet(GUEST_WALLET_KEY) || "{}") || {}; } catch (_) {}
+      wallet.coins = Math.max(0, Number(d.coins) || 0);
+      wallet.owned = d.owned && typeof d.owned === "object" ? d.owned : {};
+      wallet.equipped = typeof d.equipped === "string" ? d.equipped : "";
+      wallet.cloud = false;
+      wallet.unsynced = 0;
+      wallet.error = "";
+    }
+    function getPending(uid) { return Math.max(0, parseInt(lsGet(PENDING_PREFIX + uid) || "0", 10) || 0); }
+    function setPending(uid, n) { if (n > 0) lsSet(PENDING_PREFIX + uid, String(n)); else lsDel(PENDING_PREFIX + uid); }
+
+    async function flushPending(uid) {
+      let p = getPending(uid);
+      if (p <= 0) { if (walletUid() === uid) wallet.unsynced = 0; return; }
+      const db = getRankDb();
+      if (!db) throw new Error("no-db");
+      while (p > 0) {
+        const chunk = Math.min(p, MAX_COIN_WRITE);
+        const res = await db.ref(USERS_PATH + "/" + uid + "/coins").transaction((cur) => (Number(cur) || 0) + chunk);
+        if (!res.committed) throw new Error("not-committed");
+        if (walletUid() === uid) wallet.coins = Number(res.snapshot.val()) || 0;   // 그 사이 로그아웃/계정 변경됐으면 지갑은 건드리지 않음
+        p -= chunk;
+        setPending(uid, p);
+      }
+      if (walletUid() === uid) wallet.unsynced = 0;
+    }
+
+    async function addCoins(amount) {
+      amount = Math.floor(amount);
+      if (amount <= 0) return { saved: true };
+      const uid = walletUid();
+      if (!uid) {
+        wallet.coins += amount;
+        saveGuestWallet();
+        refreshWalletUI();
+        return { saved: true };
+      }
+      setPending(uid, getPending(uid) + amount);   // 먼저 기기에 적어 두고(탭이 닫혀도 안전) 서버로 전송
+      if (walletUid() === uid) wallet.unsynced = getPending(uid);
+      refreshWalletUI();
+      try {
+        await walletExclusive(() => flushPending(uid));
+        refreshWalletUI();
+        return { saved: true };
+      } catch (e) {
+        console.warn("[코인] 서버 저장 실패, 기기에 보관", e);
+        if (walletUid() === uid) wallet.unsynced = getPending(uid);
+        refreshWalletUI();
+        return { saved: false };
+      }
+    }
+
+    async function walletOnAuth(u) {
+      if (!u) {
+        loadGuestWallet();
+        applyEquipped();
+        refreshWalletUI();
+        return;
+      }
+      const uid = u.uid;
+      wallet.cloud = true;
+      wallet.coins = 0; wallet.owned = {}; wallet.equipped = "";
+      wallet.unsynced = getPending(uid);
+      wallet.error = "";
+      refreshWalletUI();
+      await walletExclusive(async () => {
+        const db = getRankDb();
+        if (!db) { wallet.error = "서버에 연결할 수 없어요."; return; }
+        try {
+          const snap = await db.ref(USERS_PATH + "/" + uid).once("value");
+          if (walletUid() !== uid) return;   // 그 사이 계정이 바뀜
+          const v = snap.val() || {};
+          wallet.coins = Math.max(0, Number(v.coins) || 0);
+          wallet.owned = v.owned && typeof v.owned === "object" ? v.owned : {};
+          wallet.equipped = typeof v.equipped === "string" ? v.equipped : "";
+          await flushPending(uid);
+        } catch (e) {
+          console.warn("[코인] 불러오기 실패", e);
+          wallet.error = "코인 정보를 불러오지 못했어요 (" + ((e && e.code) || (e && e.message) || "오류") + "). Firebase 규칙을 확인해 주세요.";
+        }
+      });
+      applyEquipped();
+      refreshWalletUI();
+    }
+
+    function refreshWalletUI() {
+      coinTextEl.textContent = displayCoins();
+      if (!shopModal.hidden) renderShop();
+      renderSkinPicker();
+    }
+
+    // 시작 화면 / 게임오버 화면의 스킨 선택 줄: 보유한 스킨은 바로 장착, 없는 스킨은 🔒 + 가격(누르면 상점)
+    function renderSkinPicker() {
+      const row = document.getElementById("skinPickerRow");
+      if (!row) return;
+      const list = [{ id: "", name: "기본", price: 0, skin: DEFAULT_SKIN }]
+        .concat(SHOP_ITEMS.filter((i) => i.category === "skin"));
+      row.innerHTML = list.map((it) => {
+        const owned = it.id === "" || !!wallet.owned[it.id];
+        const eq = (wallet.equipped || "") === it.id;
+        const cls = eq ? "border-amber-400/70 bg-amber-500/15" : (owned ? "border-slate-600/70 bg-slate-900/80" : "border-slate-700/60 bg-slate-900/50");
+        const sub = eq ? '<span class="text-emerald-300">장착 중</span>' : (owned ? '<span class="text-slate-400">선택</span>' : '<span class="text-yellow-300">🔒 ' + (it.price | 0) + "</span>");
+        return '<button type="button" data-skin="' + escapeHtml(it.id) + '" data-locked="' + (owned ? 0 : 1) + '" class="btn-interactive shrink-0 w-[92px] rounded-xl border p-1.5 flex flex-col items-center gap-0.5 ' + cls + (owned ? "" : " opacity-80") + '">' +
+          previewImg(mergedSkin(it), 34) +
+          '<span class="text-[10px] font-bold text-slate-100 truncate w-full text-center">' + escapeHtml(it.name) + "</span>" +
+          '<span class="text-[10px] font-bold">' + sub + "</span></button>";
+      }).join("");
+    }
+
+    // 도전이 끝난 뒤 코인 지급 (점수 + 랭킹전 1~3위 보너스)
+    function renderCoinStatus() {
+      if (state.coinText) { coinGain.innerHTML = state.coinText; coinGain.classList.remove("hidden"); }
+      else coinGain.classList.add("hidden");
+    }
+
+    async function computeRunRank(score) {
+      const me = getUser(), db = getRankDb();
+      if (!me || !db) return 0;
+      const snap = await db.ref(RANK_PATH).orderByChild("score").limitToLast(4).once("value");
+      const others = [];
+      snap.forEach((c) => { if (c.key !== me.uid) others.push(Number((c.val() || {}).score) || 0); });
+      others.sort((a, b) => b - a);
+      return 1 + others.slice(0, 3).filter((s) => s > score).length;   // 다른 사람 상위 3명 중 나보다 높은 사람 수 + 1
+    }
+
+    async function awardRunCoins() {
+      if (state.coinsAwarded) return;
+      state.coinsAwarded = true;
+      const rid = state.runId, score = state.tilesCleared, ranked = state.mode === "ranked", auto = state.autoUsed;
+      const setText = (t) => { if (rid === state.runId) { state.coinText = t; renderCoinStatus(); } };
+      if (score <= 0) return;
+      if (auto) { setText("🤖 자동 연주 기록은 코인이 지급되지 않아요."); return; }
+
+      const base = score * COIN_PER_TILE;
+      let bonus = 0, rank = 0;
+      setText("🪙 코인 지급 중...");
+      if (ranked && score >= RANK_BONUS_MIN_SCORE) {
+        try { rank = await computeRunRank(score); } catch (e) { rank = 0; }
+        if (rank >= 1 && rank <= RANK_BONUS.length) bonus = RANK_BONUS[rank - 1];
+      }
+      const total = base + bonus;
+      let res;
+      try { res = await addCoins(total); } catch (e) { res = { saved: false }; }
+
+      const parts = ["점수 " + base];
+      if (bonus) parts.push(["🥇", "🥈", "🥉"][rank - 1] + " 랭킹 " + rank + "위 보너스 +" + bonus);
+      let t = "🪙 +" + total + " 코인 (" + parts.join(" · ") + ")";
+      if (res && res.saved === false) t += '<br><span class="text-amber-300">서버 저장에 실패해 이 기기에 임시 보관했어요. 다음 접속 때 자동으로 다시 시도해요.</span>';
+      setText(t);
+    }
+
+    // ---------------- 스킨 / 상점 ----------------
+    const DEFAULT_SKIN = {
+      id: "",
+      fx: "",
+      fire: { outer: "#ea3815", mid: "#ff5e3a", core: "#fff7ed", trail: "#ff5e3a" },
+      ice:  { outer: "#0284c7", mid: "#38bdf8", core: "#f0f9ff", trail: "#38bdf8" }
+    };
+    let activeSkin = DEFAULT_SKIN;
+
+    // 상점 상품 목록 — 지금은 비어 있음. 나중에 아래 형식으로 추가하면 바로 상점에 나타나요.
+    // skin: { fx(선택: snow | candy), fire/ice: { outer, mid, core, trail, deco(선택: bauble | candy | pumpkin | ghost) } }
+    const SHOP_ITEMS = [
+      {
+        id: "xmas", category: "skin", name: "🎄 크리스마스", price: 400,
+        desc: "금빛 캡이 달린 빨강·초록 장식 공 · 타일을 지날 때 하얀 눈이 내려요",
+        skin: {
+          fx: "snow",
+          fire: { outer: "#991b1b", mid: "#ef4444", core: "#fecaca", trail: "#ef4444", deco: "bauble" },
+          ice:  { outer: "#166534", mid: "#22c55e", core: "#bbf7d0", trail: "#22c55e", deco: "candy" }
+        }
+      },
+      {
+        id: "halloween", category: "skin", name: "🎃 할로윈", price: 400,
+        desc: "잭오랜턴과 유령 공 · 타일을 지날 때 사탕이 터져 나와요",
+        skin: {
+          fx: "candy",
+          fire: { outer: "#9a3412", mid: "#fb923c", core: "#fed7aa", trail: "#fb923c", deco: "pumpkin" },
+          ice:  { outer: "#6d28d9", mid: "#c4b5fd", core: "#ffffff", trail: "#a78bfa", deco: "ghost" }
+        }
+      }
+    ];
+    const SHOP_CATEGORIES = [{ id: "skin", name: "스킨" }];
+    let shopCat = "skin";
+
+    function applyEquipped() {
+      const item = SHOP_ITEMS.find((i) => i.id === wallet.equipped && wallet.owned[i.id]);
+      activeSkin = item && item.skin ? { id: item.id, fx: item.skin.fx || "", fire: Object.assign({}, DEFAULT_SKIN.fire, item.skin.fire), ice: Object.assign({}, DEFAULT_SKIN.ice, item.skin.ice) } : DEFAULT_SKIN;
+    }
+
+    async function buyItem(id) {
+      const item = SHOP_ITEMS.find((i) => i.id === id);
+      if (!item) return { ok: false, msg: "없는 상품이에요." };
+      if (wallet.owned[id]) return { ok: false, msg: "이미 가지고 있어요." };
+      const price = Math.max(0, Math.floor(item.price) || 0);
+      const uid = walletUid();
+      if (!uid) {
+        if (wallet.coins < price) return { ok: false, msg: "코인이 부족해요." };
+        wallet.coins -= price;
+        wallet.owned[id] = true;
+        saveGuestWallet();
+        return { ok: true };
+      }
+      return walletExclusive(async () => {
+        const db = getRankDb();
+        if (!db) return { ok: false, msg: "서버에 연결할 수 없어요." };
+        try {
+          await flushPending(uid);   // 아직 못 보낸 코인을 먼저 반영
+          const res = await db.ref(USERS_PATH + "/" + uid).transaction((cur) => {
+            if (cur === null) return null;   // 서버 값을 아직 모름 → 서버 값으로 다시 실행되게 함
+            const c = Number(cur.coins) || 0;
+            if (c < price || (cur.owned && cur.owned[id])) return;   // 중단
+            return Object.assign({}, cur, { coins: c - price, owned: Object.assign({}, cur.owned, { [id]: true }) });
+          });
+          const v = res.snapshot.val() || {};
+          if (!res.committed || !(v.owned && v.owned[id])) return { ok: false, msg: "구매하지 못했어요. (코인 부족 또는 이미 보유)" };
+          if (walletUid() === uid) {
+            wallet.coins = Number(v.coins) || 0;
+            wallet.owned = v.owned;
+          }
+          return { ok: true };
+        } catch (e) {
+          return { ok: false, msg: "구매 실패 (" + ((e && e.code) || (e && e.message) || "오류") + ")" };
+        }
+      });
+    }
+
+    async function equipItem(id) {   // id === "" 이면 기본 스킨
+      if (id && !wallet.owned[id]) return { ok: false, msg: "먼저 구매해야 해요." };
+      const uid = walletUid();
+      if (!uid) {
+        wallet.equipped = id;
+        saveGuestWallet();
+        return { ok: true };
+      }
+      try {
+        const db = getRankDb();
+        if (!db) throw new Error("no-db");
+        await db.ref(USERS_PATH + "/" + uid + "/equipped").set(id);
+        wallet.equipped = id;
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, msg: "장착 저장 실패 (" + ((e && e.code) || (e && e.message) || "오류") + ")" };
+      }
+    }
+
+    let shopBusy = false;
+    const shopModal = $id("shopModal");
+    const shopGrid = $id("shopGrid");
+    const shopTabs = $id("shopTabs");
+
+    const skinPreviewCache = {};
+    function skinPreviewURL(skin) {
+      const key = ["fire", "ice"].map((k) => [skin[k].outer, skin[k].mid, skin[k].core, skin[k].deco || ""].join("")).join("|");
+      if (skinPreviewCache[key]) return skinPreviewCache[key];
+      const a = getPlanetSprite(skin.fire), b = getPlanetSprite(skin.ice);
+      // 글로우 여백은 잘라내고 행성(+위쪽 장식)만 크게 보이도록 중앙을 잘라서 사용
+      const S = 3, half = PLANET_RADIUS * 1.75 * S, mid = (a.L * S) / 2;
+      const c = document.createElement("canvas");
+      c.width = 240; c.height = 120;
+      const g = c.getContext("2d");
+      g.drawImage(a.c, mid - half, mid - half, half * 2, half * 2, 0, 0, 120, 120);
+      g.drawImage(b.c, mid - half, mid - half, half * 2, half * 2, 120, 0, 120, 120);
+      let url = "";
+      try { url = c.toDataURL("image/png"); } catch (_) {}
+      return (skinPreviewCache[key] = url);
+    }
+    function previewImg(skin, h) {
+      return '<img alt="" src="' + skinPreviewURL(skin) + '" style="height:' + h + 'px;width:auto;display:block" />';
+    }
+    function mergedSkin(it) {
+      return { id: it.id || "", fire: Object.assign({}, DEFAULT_SKIN.fire, (it.skin || {}).fire), ice: Object.assign({}, DEFAULT_SKIN.ice, (it.skin || {}).ice) };
+    }
+
+    function swatch(skin) {
+      return '<span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 35%,' + escapeHtml(skin.fire.core) + ',' + escapeHtml(skin.fire.mid) + ' 45%,' + escapeHtml(skin.fire.outer) + ')"></span>' +
+             '<span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 35%,' + escapeHtml(skin.ice.core) + ',' + escapeHtml(skin.ice.mid) + ' 45%,' + escapeHtml(skin.ice.outer) + ')"></span>';
+    }
+
+    function renderShop() {
+      $id("shopCoins").textContent = displayCoins();
+      $id("shopWalletNote").textContent = wallet.error
+        ? wallet.error
+        : (wallet.cloud ? "코인과 구매 내역은 내 계정에 저장돼요." : "게스트 코인은 이 기기에만 저장돼요. 로그인하면 계정 코인을 따로 모아요.");
+      $id("shopRules").innerHTML = "🪙 코인 획득: 점수 1점당 " + COIN_PER_TILE + "코인 · 랭킹전 점수가 상위 3위 안이면 추가 보너스 " +
+        RANK_BONUS.map((b, i) => ["🥇", "🥈", "🥉"][i] + b).join(" ") + " (" + RANK_BONUS_MIN_SCORE + "점 이상) · 자동 연주 기록은 제외";
+
+      shopTabs.innerHTML = SHOP_CATEGORIES.map((c) =>
+        '<button type="button" data-cat="' + c.id + '" class="btn-interactive px-3.5 py-1.5 rounded-xl text-xs font-bold border ' +
+        (c.id === shopCat ? "bg-amber-500/15 text-amber-200 border-amber-400/50" : "bg-slate-900/80 text-slate-300 border-slate-700/70") + '">' + escapeHtml(c.name) + "</button>"
+      ).join("");
+
+      const cards = [];
+      if (shopCat === "skin") {
+        const eq = !wallet.equipped;
+        cards.push(cardHtml({ id: "", name: "기본 스킨", desc: "처음 제공되는 불과 얼음", swatches: previewImg(DEFAULT_SKIN, 52), owned: true, equipped: eq, price: 0 }));
+      }
+      for (const it of SHOP_ITEMS.filter((i) => i.category === shopCat)) {
+        cards.push(cardHtml({ id: it.id, name: it.name, desc: it.desc || "", swatches: previewImg(mergedSkin(it), 52), owned: !!wallet.owned[it.id], equipped: wallet.equipped === it.id, price: it.price | 0 }));
+      }
+      let html = cards.join("");
+      if (!SHOP_ITEMS.some((i) => i.category === shopCat)) {
+        html += '<div class="col-span-2 rounded-2xl border border-dashed border-slate-600/70 bg-slate-900/50 p-5 text-center text-sm text-slate-300 leading-relaxed">🛠 아직 판매 중인 상품이 없어요.<br/><span class="text-xs text-slate-400">곧 새 스킨이 들어와요! 그동안 코인을 모아 두세요.</span></div>';
+      }
+      shopGrid.innerHTML = html;
+    }
+
+    function cardHtml(c) {
+      let btn;
+      if (c.equipped) btn = '<button disabled class="w-full py-1.5 rounded-xl text-xs font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-400/30">장착 중</button>';
+      else if (c.owned) btn = '<button data-act="equip" data-id="' + escapeHtml(c.id) + '" class="btn-interactive w-full py-1.5 rounded-xl text-xs font-bold text-sky-200 bg-slate-800/80 border border-sky-400/30">장착하기</button>';
+      else {
+        const can = displayCoins() >= c.price;
+        btn = '<button data-act="buy" data-id="' + escapeHtml(c.id) + '" class="btn-interactive w-full py-1.5 rounded-xl text-xs font-bold ' +
+              (can ? "text-yellow-200 bg-yellow-500/15 border border-yellow-400/40" : "text-slate-500 bg-slate-800/60 border border-slate-700/60") + '">🪙 ' + c.price + " 구매</button>";
+      }
+      return '<div class="rounded-2xl border border-slate-700/70 bg-slate-900/70 p-3 flex flex-col gap-2">' +
+        '<div class="h-16 rounded-xl bg-slate-950/70 flex items-center justify-center">' + c.swatches + "</div>" +
+        '<div class="font-black text-sm text-white leading-tight">' + escapeHtml(c.name) + "</div>" +
+        '<div class="text-[11px] text-slate-400 leading-snug min-h-[28px]">' + escapeHtml(c.desc) + "</div>" + btn + "</div>";
+    }
+
+    function openShop() {
+      if (isGameActive()) { toast("게임 중에는 열 수 없어요. R로 재시작한 뒤 이용해 주세요."); return; }
+      shopModal.hidden = false;
+      renderShop();
+    }
+    function closeShop() { shopModal.hidden = true; }
+
+    $id("btnShop").addEventListener("click", (e) => { e.stopPropagation(); e.currentTarget.blur(); openShop(); });
+    $id("shopClose").addEventListener("click", closeShop);
+    shopModal.addEventListener("pointerdown", (e) => { if (e.target === shopModal) closeShop(); });
+    $id("skinShopLink").addEventListener("click", (e) => { e.stopPropagation(); e.currentTarget.blur(); openShop(); });
+    $id("skinPickerRow").addEventListener("click", async (e) => {
+      const b = e.target.closest("button[data-skin]");
+      if (!b || shopBusy) return;
+      if (b.dataset.locked === "1") { toast("상점에서 구매하면 장착할 수 있어요."); openShop(); return; }
+      shopBusy = true;
+      try {
+        const r = await equipItem(b.dataset.skin);
+        if (!r.ok) toast(r.msg || "장착하지 못했어요.");
+        applyEquipped();
+        refreshWalletUI();
+      } finally { shopBusy = false; }
+    });
+    shopTabs.addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-cat]");
+      if (b) { shopCat = b.dataset.cat; renderShop(); }
+    });
+    shopGrid.addEventListener("click", async (e) => {
+      const b = e.target.closest("button[data-act]");
+      if (!b || shopBusy) return;
+      shopBusy = true;
+      try {
+        const id = b.dataset.id;
+        const r = b.dataset.act === "buy" ? await buyItem(id) : await equipItem(id);
+        if (r.ok && b.dataset.act === "buy") { const eq = await equipItem(id); toast(eq.ok ? "구매 완료! 바로 장착했어요." : "구매 완료!"); }
+        else if (!r.ok) toast(r.msg || "처리하지 못했어요.");
+        applyEquipped();
+        refreshWalletUI();
+      } finally { shopBusy = false; }
+    });
+
+    loadGuestWallet();
+    applyEquipped();
+    coinTextEl.textContent = displayCoins();   // 스킨 선택 줄은 모든 상수가 준비된 뒤 onload에서 그림
+
+    let hudTierLevel = -1;
+    function setTxt(el, v) {
+      v = String(v);
+      if (el._v !== v) { el.textContent = v; el._v = v; }
+    }
     function updateHUD() {
-      hudDistance.textContent = state.tilesCleared;
-      hudBest.textContent = state.mode === "ranked" ? state.rankedBest : state.bestScore;
-      hudBpm.textContent = state.currentBPM;
+      setTxt(hudDistance, state.tilesCleared);
+      setTxt(hudBest, state.mode === "ranked" ? state.rankedBest : state.bestScore);
+      setTxt(hudBpm, state.currentBPM);
 
       const acc = state.totalJudged > 0
         ? (state.accuracySum / state.totalJudged).toFixed(1)
         : "100.0";
-      hudAccuracy.textContent = `${acc}%`;
+      setTxt(hudAccuracy, `${acc}%`);
 
       const tier = getTierForTiles(state.tilesCleared);
-      tierBadge.className = `glass-pill px-3.5 py-2 rounded-2xl flex items-center gap-2 text-xs sm:text-sm font-bold ${tier.badgeClass}`;
-      tierDot.className = `w-2 h-2 rounded-full ${tier.dotClass}`;
-      tierLabel.textContent = tier.name;
+      if (tier.level !== hudTierLevel) {
+        hudTierLevel = tier.level;
+        tierBadge.className = `glass-pill px-3.5 py-2 rounded-2xl flex items-center gap-2 text-xs sm:text-sm font-bold ${tier.badgeClass}`;
+        tierDot.className = `w-2 h-2 rounded-full ${tier.dotClass}`;
+        tierLabel.textContent = tier.name;
+      }
     }
 
     function showMilestoneBanner(tier) {
@@ -1681,7 +2361,7 @@ window.OD_FIREBASE_CONFIG = {
 
     function initStars() {
       state.stars = [];
-      for (let i = 0; i < 160; i++) {
+      for (let i = 0; i < 110; i++) {
         state.stars.push({
           x: Math.random() * 2600 - 1300,
           y: Math.random() * 1800 - 900,
@@ -1693,8 +2373,9 @@ window.OD_FIREBASE_CONFIG = {
       }
     }
 
+    let renderScale = Math.min(window.devicePixelRatio || 1, 1.5);
     function handleResize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = renderScale;
       viewW = window.innerWidth;
       viewH = window.innerHeight;
       canvas.width = Math.floor(viewW * dpr);
@@ -1716,8 +2397,9 @@ window.OD_FIREBASE_CONFIG = {
     // --------------------------------------------------------------------------
     function initRun(startImmediately = false) {
       // 랭킹전 도중 재시작하면 그때까지의 기록을 제출
-      if (state.mode === "ranked" && (state.phase === "playing" || state.phase === "countdown")) {
-        submitRankedScore();
+      if (state.phase === "playing" || state.phase === "countdown") {
+        if (state.mode === "ranked") submitRankedScore();
+        awardRunCoins();   // 도중 재시작해도 그때까지의 점수만큼 코인 지급
       }
       // 랭킹전은 로그인 필수
       if (state.mode === "ranked" && !getUser()) {
@@ -1730,6 +2412,9 @@ window.OD_FIREBASE_CONFIG = {
         state.autoPlay = false;
       }
       state.rankSubmitted = false;
+      state.coinsAwarded = false;
+      state.coinText = "";
+      state.autoUsed = state.autoPlay;
       state.rankStatus = "";
       state.runId = (state.runId || 0) + 1;
       applyModeUI();
@@ -1838,6 +2523,7 @@ window.OD_FIREBASE_CONFIG = {
       btnStartRetry.textContent = "다시 도전 (Space)";
       btnToMenu.classList.remove("hidden");
       renderRankStatus();
+      renderCoinStatus();
       modalOverlay.classList.remove("hidden");
     }
 
@@ -1877,17 +2563,18 @@ window.OD_FIREBASE_CONFIG = {
       const omega = (state.currentBPM / 60) * Math.PI;
       const targetTravel = getTargetTravelForCurrent();
       const hitWindow = getHitWindowRad(omega);
+      const effAngle = effTravelAngle(omega);   // 입력 지연 보정이 반영된 판정용 각도
 
       // 카운트다운 중(travelAngle < 0) 실수 탭 무시 보호; 단 첫 타일 판정 영역 진입 시 즉시 허용
       if (state.travelAngle < 0) {
-        if (Math.abs(state.travelAngle - targetTravel) <= hitWindow) {
+        if (Math.abs(effAngle - targetTravel) <= hitWindow) {
           state.phase = "playing";
           commitTileHit(false);
         }
         return;
       }
 
-      const diff = state.travelAngle - targetTravel;
+      const diff = effAngle - targetTravel;
 
       // 너무 일찍 누른 경우
       if (diff < -hitWindow) {
@@ -1909,7 +2596,7 @@ window.OD_FIREBASE_CONFIG = {
       const targetTravel = getTargetTravelForCurrent();
       const omega = (state.currentBPM / 60) * Math.PI;
       const hitWindow = getHitWindowRad(omega);
-      const signedDiff = isAuto ? 0 : (state.travelAngle - targetTravel);
+      const signedDiff = isAuto ? 0 : (effTravelAngle(omega) - targetTravel);
       const absDiff = Math.abs(signedDiff);
 
       // 판정 등급 계산 (`완벽!`, `정확!`, `빠름`, `느림`)
@@ -2024,10 +2711,11 @@ window.OD_FIREBASE_CONFIG = {
 
       audio.playCrash();
       if (state.mode === "ranked") submitRankedScore();
+      awardRunCoins();
 
       const { firePos, icePos } = getPlanetPositions();
-      spawnCrashParticles(firePos.x, firePos.y, ["#ff5e3a", "#ff9f1c", "#ffffff"]);
-      spawnCrashParticles(icePos.x, icePos.y, ["#38bdf8", "#22d3ee", "#ffffff"]);
+      spawnCrashParticles(firePos.x, firePos.y, activeSkin.id ? [activeSkin.fire.trail, activeSkin.fire.mid, "#ffffff"] : ["#ff5e3a", "#ff9f1c", "#ffffff"]);
+      spawnCrashParticles(icePos.x, icePos.y, activeSkin.id ? [activeSkin.ice.trail, activeSkin.ice.mid, "#ffffff"] : ["#38bdf8", "#22d3ee", "#ffffff"]);
 
       setTimeout(() => {
         if (state.phase === "gameover") {
@@ -2049,7 +2737,7 @@ window.OD_FIREBASE_CONFIG = {
         color
       });
 
-      const count = tileType === "normal" ? 10 : 18;
+      const count = tileType === "normal" ? 7 : 12;
       for (let i = 0; i < count; i++) {
         const ang = (Math.PI * 2 * i) / count + Math.random() * 0.35;
         const spd = 65 + Math.random() * 145;
@@ -2063,6 +2751,118 @@ window.OD_FIREBASE_CONFIG = {
           decay: 2.3 + Math.random() * 0.9,
           color
         });
+      }
+      if (activeSkin.fx) spawnSkinFx(x, y, tileType);
+    }
+
+    // ---- 스킨 전용 이펙트: 눈(snow) / 사탕(candy). 스프라이트는 처음 한 번만 그려 재사용 ----
+    let snowflakeSprite = null;
+    function getSnowflakeSprite() {
+      if (snowflakeSprite) return snowflakeSprite;
+      const S = 2, N = 24;
+      const c = document.createElement("canvas");
+      c.width = c.height = N * S;
+      const g = c.getContext("2d");
+      g.scale(S, S);
+      g.translate(N / 2, N / 2);
+      g.strokeStyle = "#ffffff";
+      g.lineCap = "round";
+      g.lineWidth = 1.7;
+      for (let i = 0; i < 6; i++) {
+        g.save();
+        g.rotate((Math.PI / 3) * i);
+        g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -10); g.stroke();
+        g.lineWidth = 1.2;
+        g.beginPath(); g.moveTo(0, -6); g.lineTo(-3, -9); g.moveTo(0, -6); g.lineTo(3, -9); g.stroke();
+        g.restore();
+        g.lineWidth = 1.7;
+      }
+      return (snowflakeSprite = c);
+    }
+
+    let candySprites = null;
+    function getCandySprites() {
+      if (candySprites) return candySprites;
+      const mk = (draw) => {
+        const S = 2, N = 32;
+        const c = document.createElement("canvas");
+        c.width = c.height = N * S;
+        const g = c.getContext("2d");
+        g.scale(S, S);
+        draw(g);
+        return c;
+      };
+      const wrapped = (body, wrap) => mk((g) => {
+        g.fillStyle = wrap;
+        g.beginPath(); g.moveTo(2, 7); g.lineTo(11, 16); g.lineTo(2, 25); g.closePath(); g.fill();
+        g.beginPath(); g.moveTo(30, 7); g.lineTo(21, 16); g.lineTo(30, 25); g.closePath(); g.fill();
+        g.fillStyle = body;
+        g.beginPath(); g.ellipse(16, 16, 10, 7, 0, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = "rgba(255,255,255,0.55)"; g.lineWidth = 1.6;
+        g.beginPath(); g.moveTo(11, 11); g.lineTo(9, 21); g.moveTo(16, 9.5); g.lineTo(14.5, 22.5); g.moveTo(21, 11); g.lineTo(19.5, 21); g.stroke();
+      });
+      const lolly = (head) => mk((g) => {
+        g.fillStyle = "#f1f5f9"; g.fillRect(15, 18, 2.4, 13);
+        g.fillStyle = head; g.beginPath(); g.arc(16, 12, 9, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = "#ffffff"; g.lineWidth = 2.2; g.lineCap = "round";
+        g.beginPath(); g.arc(16, 12, 6, 0.4, 5.2); g.stroke();
+        g.beginPath(); g.arc(16, 12, 2.4, 1, 5.6); g.stroke();
+      });
+      const corn = mk((g) => {
+        g.save();
+        g.beginPath(); g.moveTo(16, 3); g.lineTo(4, 29); g.lineTo(28, 29); g.closePath(); g.clip();
+        g.fillStyle = "#ffffff"; g.fillRect(0, 0, 32, 13);
+        g.fillStyle = "#fb923c"; g.fillRect(0, 13, 32, 8);
+        g.fillStyle = "#fde047"; g.fillRect(0, 21, 32, 12);
+        g.restore();
+      });
+      return (candySprites = [
+        wrapped("#fb923c", "#7c3aed"), wrapped("#a78bfa", "#fb923c"), wrapped("#f472b6", "#84cc16"),
+        lolly("#f472b6"), lolly("#fb923c"), corn
+      ]);
+    }
+
+    function spawnSkinFx(x, y, tileType) {
+      const special = tileType !== "normal";
+      if (activeSkin.fx === "snow") {
+        const flake = getSnowflakeSprite();
+        const n = special ? 16 : 11;
+        for (let i = 0; i < n; i++) {
+          const isFlake = Math.random() < 0.38;
+          state.particles.push({
+            x: x + (Math.random() - 0.5) * 38,
+            y: y + (Math.random() - 0.5) * 38,
+            vx: (Math.random() - 0.5) * 70,
+            vy: -25 - Math.random() * 85,
+            gravity: 110, drag: 0.9,
+            sway: 90, swayF: 6 + Math.random() * 4, phase: Math.random() * 6.28, t: 0,
+            r: 1.3 + Math.random() * 2.0,
+            sprite: isFlake ? flake : null,
+            size: 9 + Math.random() * 6,
+            rot: Math.random() * 6.28, vrot: (Math.random() - 0.5) * 4,
+            alpha: 1, decay: 0.8 + Math.random() * 0.5,
+            color: "#ffffff"
+          });
+        }
+      } else if (activeSkin.fx === "candy") {
+        const sprites = getCandySprites();
+        const n = special ? 9 : 6;
+        for (let i = 0; i < n; i++) {
+          const ang = (Math.PI * 2 * i) / n + Math.random() * 0.6;
+          const spd = 80 + Math.random() * 110;
+          state.particles.push({
+            x, y,
+            vx: Math.cos(ang) * spd,
+            vy: Math.sin(ang) * spd - 70,
+            gravity: 300, drag: 0.5,
+            r: 4,
+            sprite: sprites[(Math.random() * sprites.length) | 0],
+            size: 13 + Math.random() * 6,
+            rot: Math.random() * 6.28, vrot: (Math.random() - 0.5) * 16,
+            alpha: 1, decay: 1.05 + Math.random() * 0.35,
+            color: "#ffffff"
+          });
+        }
       }
     }
 
@@ -2173,7 +2973,7 @@ window.OD_FIREBASE_CONFIG = {
             commitTileHit(true, overshoot);
           }
         } else {
-          if (state.travelAngle > targetTravel + hitWindow) {
+          if (effTravelAngle(omega) > targetTravel + hitWindow) {
             triggerCrash("너무 늦었어요!");
           }
         }
@@ -2199,11 +2999,12 @@ window.OD_FIREBASE_CONFIG = {
       state.fireTrail.push({ x: firePos.x, y: firePos.y, alpha: 0.88 });
       state.iceTrail.push({ x: icePos.x, y: icePos.y, alpha: 0.88 });
 
-      if (state.fireTrail.length > 26) state.fireTrail.shift();
-      if (state.iceTrail.length > 26) state.iceTrail.shift();
+      if (state.fireTrail.length > 20) state.fireTrail.shift();
+      if (state.iceTrail.length > 20) state.iceTrail.shift();
     }
 
     function updateParticles(dt) {
+      if (state.particles.length > 150) state.particles.splice(0, state.particles.length - 150);
       for (let i = state.fireTrail.length - 1; i >= 0; i--) {
         state.fireTrail[i].alpha -= dt * 2.7;
         if (state.fireTrail[i].alpha <= 0) state.fireTrail.splice(i, 1);
@@ -2214,6 +3015,9 @@ window.OD_FIREBASE_CONFIG = {
       }
       for (let i = state.particles.length - 1; i >= 0; i--) {
         const p = state.particles[i];
+        if (p.drag) { const k = Math.exp(-p.drag * dt); p.vx *= k; p.vy *= k; }
+        if (p.sway) { p.t += dt; p.vx += Math.sin(p.t * p.swayF + p.phase) * p.sway * dt; }
+        if (p.vrot) p.rot += p.vrot * dt;
         p.x += p.vx * dt;
         p.y += p.vy * dt;
         if (p.gravity) p.vy += p.gravity * dt;
@@ -2235,32 +3039,49 @@ window.OD_FIREBASE_CONFIG = {
       }
     }
 
-    function render() {
-      // 1) 비트 반응형 우주 배경 그라데이션
-      const radGrad = ctx.createRadialGradient(
-        viewW * 0.5,
-        viewH * 0.5,
-        30,
-        viewW * 0.5,
-        viewH * 0.5,
-        Math.max(viewW, viewH) * 0.8
-      );
-      radGrad.addColorStop(0, state.bgTint);
-      radGrad.addColorStop(0.6, "#090d16");
-      radGrad.addColorStop(1, "#04060b");
-      ctx.fillStyle = radGrad;
-      ctx.fillRect(0, 0, viewW, viewH);
+    // ---- 성능: 배경 그라데이션은 CSS 레이어(#bgLayer)가 담당. 캔버스는 투명하게 지우기만 함 ----
+    const bgLayer = document.getElementById("bgLayer");
+    let lastTint = "";
+    function drawBackground() {
+      if (state.bgTint !== lastTint) {
+        lastTint = state.bgTint;
+        bgLayer.style.background =
+          `radial-gradient(circle at 50% 50%, ${lastTint} 0px, #090d16 calc(max(100vw, 100vh) * 0.48), #04060b calc(max(100vw, 100vh) * 0.8))`;
+      }
+      ctx.clearRect(0, 0, viewW, viewH);
+    }
 
-      // 2) 시차 별빛
+    // ---- 성능: 별은 밝기 4단계로 묶어서 한 번에 채우기 ----
+    const STAR_FILL = ["rgba(226,232,240,0.30)", "rgba(226,232,240,0.46)", "rgba(226,232,240,0.62)", "rgba(226,232,240,0.78)"];
+    const starBuckets = [[], [], [], []];
+    function drawStars() {
+      for (let b = 0; b < 4; b++) starBuckets[b].length = 0;
       for (const s of state.stars) {
         const sx = ((s.x - state.camX * s.parallax) % viewW + viewW) % viewW;
         const sy = ((s.y - state.camY * s.parallax) % viewH + viewH) % viewH;
-        const alpha = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(s.phase));
-        ctx.fillStyle = `rgba(226, 232, 240, ${alpha})`;
+        const a = 0.5 + 0.5 * Math.sin(s.phase);
+        const arr = starBuckets[Math.min(3, (a * 4) | 0)];
+        arr.push(sx, sy, s.r);
+      }
+      for (let b = 0; b < 4; b++) {
+        const arr = starBuckets[b];
+        if (!arr.length) continue;
+        ctx.fillStyle = STAR_FILL[b];
         ctx.beginPath();
-        ctx.arc(sx, sy, s.r, 0, Math.PI * 2);
+        for (let j = 0; j < arr.length; j += 3) {
+          ctx.moveTo(arr[j] + arr[j + 2], arr[j + 1]);
+          ctx.arc(arr[j], arr[j + 1], arr[j + 2], 0, Math.PI * 2);
+        }
         ctx.fill();
       }
+    }
+
+    // 화면 밖 타일/연결선 생략용 가시 영역 (월드 좌표)
+    let cullL = -1e9, cullR = 1e9, cullT = -1e9, cullB = 1e9;
+
+    function render() {
+      drawBackground();
+      drawStars();
 
       // 3) 월드 좌표 변환
       ctx.save();
@@ -2275,6 +3096,11 @@ window.OD_FIREBASE_CONFIG = {
       ctx.translate(viewW * 0.5 + shakeX, viewH * 0.5 + shakeY);
       ctx.scale(zoom, zoom);
       ctx.translate(-state.camX, -state.camY);
+
+      const halfVW = viewW / (2 * zoom) + 100;
+      const halfVH = viewH / (2 * zoom) + 100;
+      cullL = state.camX - halfVW; cullR = state.camX + halfVW;
+      cullT = state.camY - halfVH; cullB = state.camY + halfVH;
 
       drawWorldGrid();
       drawTrackConnectors();
@@ -2295,22 +3121,29 @@ window.OD_FIREBASE_CONFIG = {
         ctx.restore();
       }
 
-      drawRibbonTrail(state.fireTrail, "#ff5e3a");
-      drawRibbonTrail(state.iceTrail, "#38bdf8");
+      drawRibbonTrail(state.fireTrail, activeSkin.fire.trail);
+      drawRibbonTrail(state.iceTrail, activeSkin.ice.trail);
 
       if (state.phase !== "gameover") {
         drawPlanets();
       }
 
       for (const p of state.particles) {
-        ctx.save();
-        ctx.fillStyle = p.color;
         ctx.globalAlpha = Math.max(0, p.alpha);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+        if (p.sprite) {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          if (p.rot) ctx.rotate(p.rot);
+          ctx.drawImage(p.sprite, -p.size / 2, -p.size / 2, p.size, p.size);
+          ctx.restore();
+        } else {
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
+      ctx.globalAlpha = 1;
 
       for (const ft of state.floatTexts) {
         ctx.save();
@@ -2319,8 +3152,10 @@ window.OD_FIREBASE_CONFIG = {
         ctx.globalAlpha = Math.max(0, ft.alpha);
         ctx.font = "900 18px 'Noto Sans KR', sans-serif";
         ctx.textAlign = "center";
-        ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
-        ctx.shadowBlur = 8;
+        ctx.lineWidth = 4;
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.strokeText(ft.text, 0, 0);
         ctx.fillStyle = ft.color;
         ctx.fillText(ft.text, 0, 0);
         ctx.restore();
@@ -2359,46 +3194,72 @@ window.OD_FIREBASE_CONFIG = {
       ctx.restore();
     }
 
+    const segVis = [];
     function drawTrackConnectors() {
+      const tiles = state.tiles;
+      const n = tiles.length - 1;
+      segVis.length = 0;
+      for (let i = 0; i < n; i++) {
+        const x1 = tiles[i].x * TILE_STEP, y1 = tiles[i].y * TILE_STEP;
+        const x2 = tiles[i + 1].x * TILE_STEP, y2 = tiles[i + 1].y * TILE_STEP;
+        if (Math.max(x1, x2) < cullL || Math.min(x1, x2) > cullR || Math.max(y1, y2) < cullT || Math.min(y1, y2) > cullB) continue;
+        segVis.push(i);
+      }
+      if (!segVis.length) return;
+
       ctx.save();
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
 
-      for (let i = 0; i < state.tiles.length - 1; i++) {
-        const t1 = state.tiles[i];
-        const t2 = state.tiles[i + 1];
-        const x1 = t1.x * TILE_STEP;
-        const y1 = t1.y * TILE_STEP;
-        const x2 = t2.x * TILE_STEP;
-        const y2 = t2.y * TILE_STEP;
-
-        ctx.strokeStyle = t2.passed
-          ? "rgba(56, 189, 248, 0.25)"
-          : "rgba(148, 163, 184, 0.20)";
-        ctx.lineWidth = 34;
+      // 1) 바깥 테두리 (지나감 / 아직)을 각각 한 번에
+      ctx.lineWidth = 34;
+      for (let pass = 0; pass < 2; pass++) {
+        ctx.strokeStyle = pass === 0 ? "rgba(148, 163, 184, 0.20)" : "rgba(56, 189, 248, 0.25)";
         ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-
-        ctx.strokeStyle = "rgba(13, 18, 33, 0.92)";
-        ctx.lineWidth = 27;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
+        for (const i of segVis) {
+          if (!!tiles[i + 1].passed !== (pass === 1)) continue;
+          ctx.moveTo(tiles[i].x * TILE_STEP, tiles[i].y * TILE_STEP);
+          ctx.lineTo(tiles[i + 1].x * TILE_STEP, tiles[i + 1].y * TILE_STEP);
+        }
         ctx.stroke();
       }
+
+      // 2) 안쪽 어두운 면을 한 번에
+      ctx.strokeStyle = "rgba(13, 18, 33, 0.92)";
+      ctx.lineWidth = 27;
+      ctx.beginPath();
+      for (const i of segVis) {
+        ctx.moveTo(tiles[i].x * TILE_STEP, tiles[i].y * TILE_STEP);
+        ctx.lineTo(tiles[i + 1].x * TILE_STEP, tiles[i + 1].y * TILE_STEP);
+      }
+      ctx.stroke();
       ctx.restore();
     }
 
+    function makeBoxPath(half, r) {
+      const p = new Path2D();
+      const x = -half, y = -half, w = half * 2, h = half * 2;
+      p.moveTo(x + r, y);
+      p.arcTo(x + w, y, x + w, y + h, r);
+      p.arcTo(x + w, y + h, x, y + h, r);
+      p.arcTo(x, y + h, x, y, r);
+      p.arcTo(x, y, x + w, y, r);
+      p.closePath();
+      return p;
+    }
+    const TILE_BOX_PATH = makeBoxPath(21, 10);
+    const TILE_RING_PATH = makeBoxPath(26, 13);
+
     function drawTiles() {
-      const half = 21;
       const nextTargetIdx = state.currentIndex + 1;
+      const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.014);
 
       for (let i = 0; i < state.tiles.length; i++) {
         const t = state.tiles[i];
         const cx = t.x * TILE_STEP;
         const cy = t.y * TILE_STEP;
+        // 화면 밖 타일은 그리지 않음
+        if (cx < cullL || cx > cullR || cy < cullT || cy > cullB) continue;
         const isNextTarget = i === nextTargetIdx && (state.phase === "playing" || state.phase === "countdown");
 
         ctx.save();
@@ -2418,24 +3279,26 @@ window.OD_FIREBASE_CONFIG = {
           border = "#38bdf8";
           fill = "rgba(8, 47, 73, 0.92)";
         } else if (t.passed) {
-          border = "rgba(56, 189, 248, 0.65)";
+          if (activeSkin.fx === "snow") {
+            border = "rgba(255, 255, 255, 0.9)";
+            fill = "rgba(71, 85, 105, 0.95)";
+          } else {
+            border = "rgba(56, 189, 248, 0.65)";
+          }
         }
 
         // 다음 목표 타일 강조 맥동 링
         if (isNextTarget) {
-          const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.014);
           ctx.strokeStyle = `rgba(251, 191, 36, ${0.45 + pulse * 0.45})`;
           ctx.lineWidth = 3.5;
-          drawRoundedBox(ctx, -half - 5, -half - 5, (half + 5) * 2, (half + 5) * 2, 13);
-          ctx.stroke();
+          ctx.stroke(TILE_RING_PATH);
         }
 
         ctx.fillStyle = fill;
         ctx.strokeStyle = border;
         ctx.lineWidth = 2.5;
-        drawRoundedBox(ctx, -half, -half, half * 2, half * 2, 10);
-        ctx.fill();
-        ctx.stroke();
+        ctx.fill(TILE_BOX_PATH);
+        ctx.stroke(TILE_BOX_PATH);
 
         ctx.rotate(-t.outAngle);
         drawTileSymbol(t.type);
@@ -2556,30 +3419,107 @@ window.OD_FIREBASE_CONFIG = {
       ctx.stroke();
       ctx.restore();
 
-      drawPlanetSphere(firePos.x, firePos.y, "#ea3815", "#ff5e3a", "#fff7ed");
-      drawPlanetSphere(icePos.x, icePos.y, "#0284c7", "#38bdf8", "#f0f9ff");
+      drawPlanetSphere(firePos.x, firePos.y, activeSkin.fire);
+      drawPlanetSphere(icePos.x, icePos.y, activeSkin.ice);
     }
 
-    function drawPlanetSphere(x, y, outerCol, midCol, coreCol) {
-      ctx.save();
-      const glow = ctx.createRadialGradient(x, y, PLANET_RADIUS * 0.25, x, y, PLANET_RADIUS * 2.25);
+    // 스킨 장식: 행성 스프라이트에 한 번만 그려 넣음 (g: 스프라이트 컨텍스트, x/y: 중심, R: 반지름)
+    const SKIN_DECO = {
+      // 🎄 크리스마스 장식 공: 금색 캡 + 반짝임
+      bauble(g, x, y, R) {
+        g.save();
+        g.fillStyle = "rgba(255,255,255,0.55)";
+        g.beginPath(); g.ellipse(x - R * 0.38, y - R * 0.42, R * 0.26, R * 0.14, -0.7, 0, Math.PI * 2); g.fill();
+        g.fillStyle = "#fbbf24"; g.fillRect(x - R * 0.3, y - R * 1.18, R * 0.6, R * 0.34);
+        g.fillStyle = "#f59e0b"; g.fillRect(x - R * 0.3, y - R * 0.92, R * 0.6, R * 0.1);
+        g.strokeStyle = "#fde68a"; g.lineWidth = R * 0.1;
+        g.beginPath(); g.arc(x, y - R * 1.3, R * 0.2, 0, Math.PI * 2); g.stroke();
+        g.restore();
+      },
+      // 🍬 캔디 스트라이프 장식 공
+      candy(g, x, y, R) {
+        g.save();
+        g.beginPath(); g.arc(x, y, R, 0, Math.PI * 2); g.clip();
+        g.strokeStyle = "rgba(255,255,255,0.85)"; g.lineWidth = R * 0.3;
+        for (const o of [-0.8, 0, 0.8]) {
+          g.beginPath(); g.moveTo(x + o * R - R, y + R); g.lineTo(x + o * R + R, y - R); g.stroke();
+        }
+        g.restore();
+        SKIN_DECO.bauble(g, x, y, R);
+      },
+      // 🎃 잭오랜턴
+      pumpkin(g, x, y, R) {
+        g.save();
+        g.strokeStyle = "rgba(124,45,18,0.55)"; g.lineWidth = R * 0.1;
+        g.beginPath(); g.ellipse(x, y, R * 0.52, R * 0.98, 0, 0, Math.PI * 2); g.stroke();
+        g.fillStyle = "#4d7c0f";
+        g.beginPath();
+        g.moveTo(x - R * 0.16, y - R * 0.9); g.lineTo(x - R * 0.08, y - R * 1.38);
+        g.lineTo(x + R * 0.22, y - R * 1.32); g.lineTo(x + R * 0.16, y - R * 0.9);
+        g.closePath(); g.fill();
+        g.fillStyle = "#2a1204";
+        g.beginPath(); g.moveTo(x - R * 0.58, y - R * 0.08); g.lineTo(x - R * 0.2, y - R * 0.08); g.lineTo(x - R * 0.4, y - R * 0.5); g.closePath(); g.fill();
+        g.beginPath(); g.moveTo(x + R * 0.58, y - R * 0.08); g.lineTo(x + R * 0.2, y - R * 0.08); g.lineTo(x + R * 0.4, y - R * 0.5); g.closePath(); g.fill();
+        g.beginPath();
+        g.moveTo(x - R * 0.62, y + R * 0.2); g.lineTo(x - R * 0.42, y + R * 0.52); g.lineTo(x - R * 0.2, y + R * 0.3);
+        g.lineTo(x, y + R * 0.54); g.lineTo(x + R * 0.2, y + R * 0.3); g.lineTo(x + R * 0.42, y + R * 0.52);
+        g.lineTo(x + R * 0.62, y + R * 0.2); g.closePath(); g.fill();
+        g.restore();
+      },
+      // 👻 유령
+      ghost(g, x, y, R) {
+        g.save();
+        g.fillStyle = "rgba(244,114,182,0.4)";
+        g.beginPath(); g.arc(x - R * 0.62, y + R * 0.22, R * 0.16, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.arc(x + R * 0.62, y + R * 0.22, R * 0.16, 0, Math.PI * 2); g.fill();
+        g.fillStyle = "#1e1b4b";
+        g.beginPath(); g.ellipse(x - R * 0.34, y - R * 0.12, R * 0.15, R * 0.24, 0, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(x + R * 0.34, y - R * 0.12, R * 0.15, R * 0.24, 0, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(x, y + R * 0.42, R * 0.15, R * 0.21, 0, 0, Math.PI * 2); g.fill();
+        g.restore();
+      }
+    };
+
+    // 행성(글로우+본체+장식)은 한 번만 그려 두고 drawImage로 재사용
+    const planetSprites = {};
+    function getPlanetSprite(side) {
+      const outerCol = side.outer, midCol = side.mid, coreCol = side.core;
+      const key = outerCol + midCol + coreCol + (side.deco || "");
+      if (planetSprites[key]) return planetSprites[key];
+      const S = 3;
+      const L = Math.ceil(PLANET_RADIUS * 2.25 * 2) + 2;
+      const c = document.createElement("canvas");
+      c.width = c.height = L * S;
+      const g = c.getContext("2d");
+      g.scale(S, S);
+      const x = L / 2, y = L / 2;
+
+      const glow = g.createRadialGradient(x, y, PLANET_RADIUS * 0.25, x, y, PLANET_RADIUS * 2.25);
       glow.addColorStop(0, midCol);
       glow.addColorStop(0.5, outerCol + "66");
       glow.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(x, y, PLANET_RADIUS * 2.25, 0, Math.PI * 2);
-      ctx.fill();
+      g.fillStyle = glow;
+      g.beginPath();
+      g.arc(x, y, PLANET_RADIUS * 2.25, 0, Math.PI * 2);
+      g.fill();
 
-      const body = ctx.createRadialGradient(x - 4, y - 4, 2, x, y, PLANET_RADIUS);
+      const body = g.createRadialGradient(x - 4, y - 4, 2, x, y, PLANET_RADIUS);
       body.addColorStop(0, coreCol);
       body.addColorStop(0.45, midCol);
       body.addColorStop(1, outerCol);
-      ctx.fillStyle = body;
-      ctx.beginPath();
-      ctx.arc(x, y, PLANET_RADIUS, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+      g.fillStyle = body;
+      g.beginPath();
+      g.arc(x, y, PLANET_RADIUS, 0, Math.PI * 2);
+      g.fill();
+
+      if (side.deco && SKIN_DECO[side.deco]) SKIN_DECO[side.deco](g, x, y, PLANET_RADIUS);
+
+      return (planetSprites[key] = { c, L });
+    }
+
+    function drawPlanetSphere(x, y, side) {
+      const s = getPlanetSprite(side);
+      ctx.drawImage(s.c, x - s.L / 2, y - s.L / 2, s.L, s.L);
     }
 
     function drawCountdownText() {
@@ -2612,8 +3552,10 @@ window.OD_FIREBASE_CONFIG = {
       ctx.scale(popScale, popScale);
       ctx.font = "900 48px 'Noto Sans KR', 'Inter', sans-serif";
       ctx.textAlign = "center";
-      ctx.shadowColor = "rgba(0, 0, 0, 0.85)";
-      ctx.shadowBlur = 16;
+      ctx.lineWidth = 7;
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.6)";
+      ctx.strokeText(label, 0, 0);
       ctx.fillStyle = color;
       ctx.fillText(label, 0, 0);
       ctx.restore();
@@ -2635,6 +3577,14 @@ window.OD_FIREBASE_CONFIG = {
     window.addEventListener("keydown", (e) => {
       if (e.repeat) return;
       if (!rankModal.hidden) { if (e.code === "Escape") rankModal.hidden = true; return; }
+      if (!settingsModal.hidden || !shopModal.hidden) {
+        if (e.code === "Escape") { closeSettings(); closeShop(); }
+        else if (!settingsModal.hidden && calib.active && (e.code === "Space" || e.code === "Enter")) {
+          e.preventDefault();
+          recordCalibTap(e.timeStamp);
+        }
+        return;
+      }
 
       if (e.code === "KeyR") {
         e.preventDefault();
@@ -2676,6 +3626,7 @@ window.OD_FIREBASE_CONFIG = {
       btnAutoPlay.blur();
       if (state.mode === "ranked") return;   // 랭킹전에서는 자동 연주 불가
       state.autoPlay = !state.autoPlay;
+      if (state.autoPlay) state.autoUsed = true;   // 이번 판은 코인 지급 제외
 
       if (state.autoPlay) {
         btnAutoPlay.classList.add("text-emerald-300", "border-emerald-400/50");
@@ -2714,10 +3665,23 @@ window.OD_FIREBASE_CONFIG = {
     // --------------------------------------------------------------------------
     let prevTime = 0;
 
+    let frameCount = 0, slowCount = 0;
     function mainLoop(now) {
       if (!prevTime) prevTime = now;
-      const dt = Math.min((now - prevTime) / 1000, 0.05);
+      const raw = now - prevTime;
+      const dt = Math.min(raw / 1000, 0.05);
       prevTime = now;
+
+      // 프레임이 계속 느리면(약 37fps 미만) 렌더 해상도를 단계적으로 낮춤
+      frameCount++;
+      if (frameCount > 90 && raw < 120) {
+        if (raw > 27) slowCount++; else if (slowCount > 0) slowCount--;
+        if (slowCount > 45 && renderScale > 0.8) {
+          renderScale = Math.max(0.8, renderScale * 0.85);
+          slowCount = 0;
+          handleResize();
+        }
+      }
 
       try {
         update(dt);
@@ -2748,6 +3712,7 @@ window.OD_FIREBASE_CONFIG = {
       handleResize();
       initRun(false);
       applyModeUI();
+      renderSkinPicker();
       if (window.OD && OD.user) onAuthChanged(OD.user);
       requestAnimationFrame(mainLoop);
     };
